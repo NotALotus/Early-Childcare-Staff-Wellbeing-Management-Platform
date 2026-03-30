@@ -997,7 +997,7 @@ const App={
     const errEl=$(errId),roleEl=$(roleErrId),btn=$(btnId);
     errEl.style.display=roleEl.style.display='none';
     // Front-end validation
-    if(!email||!pw){Toast.error('Please enter your email and password.');return;}
+    if(!email||!pw){Toast.error('Please enter your email and password.');return;} // For the front end validation can we test the different domains that this setup is compatible with? //
     if(!email.includes('@')){Toast.error('Please enter a valid email address.');return;}
     btn.disabled=true;btn.textContent='Signing in…';
     try{
@@ -1363,7 +1363,7 @@ const Overview={
 };
 
 // ── Manager module (Mgr) ──────────────────────────────────────────
-const _charts={trend:null,concern:null,mood:null};
+const _charts={trend:null,concern:null,mood:null}; // Are we storing all the values here? //
 const Mgr={
   renderStats(){
     const checkins=this._filterByPeriod(AppState.checkins);
@@ -1694,7 +1694,7 @@ const Mgr={
         Toast.success('Status auto-updated to Reviewed');
       }
     }catch(e){
-      Toast.error('Could not save note — check your connection');
+      Toast.error('Could not save note — check your connection'); //In what circumastances does this event trigger? //
     }finally{
       if(btn){btn.disabled=false;btn.textContent='Post note';}
     }
@@ -1827,7 +1827,7 @@ self.addEventListener('fetch',e=>{if(e.request.url.includes('supabase.co'))retur
 OfflineQueue.flush();
 
 // UX #1: Session restore on page refresh
-(async function restoreSession(){
+(async function restoreSession(){ //This is a good feature in principle but we need to test if it will work if hosted online through a 3rd party domain provider. Have we thought about how we will upload this HTML? I suspect we may have to take it apart piece by piece first... //
   try{
     const{data:{session}}=await db.auth.getSession();
     if(!session)return;
