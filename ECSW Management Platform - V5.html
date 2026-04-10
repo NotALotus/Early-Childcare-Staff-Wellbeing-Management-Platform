@@ -1237,8 +1237,10 @@ function $(id){return document.getElementById(id);}
 //                 It does NOT give admin access.
 // db            — the database client object used throughout the app to
 //                 read and write data (e.g. db.from('checkins').insert(...)).
+
+// IMPORTANT
 const SUPABASE_URL='https://vxiqrzwjhkgchqrlxydk.supabase.co';
-const SUPABASE_KEY='sb_publishable_gihRNMxAPmzYT6lak1DCsg_vij37qn4';
+const SUPABASE_KEY='sb_publishable_gihRNMxAPmzYT6lak1DCsg_vij37qn4'; 
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ── Central Application State ────────────────────────────────────
