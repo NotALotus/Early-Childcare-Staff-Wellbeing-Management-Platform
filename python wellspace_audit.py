@@ -12,6 +12,8 @@ USAGE
 
    python wellspace_audit.py
 
+
+Keep in mind you will need to use python -m pip install requests to be able to use this program.
 ------------------------------------------------------
 """
 
