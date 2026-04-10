@@ -1,3 +1,5 @@
+- uses: actions/github-script@v8
+
 CREATE TABLE notifications (
   id uuid primary key default gen_random_uuid(),
   type text not null,
