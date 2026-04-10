@@ -1,4 +1,4 @@
-- uses: actions/github-script@v8
+*.js linguist-language=JavaScript
 
 CREATE TABLE notifications (
   id uuid primary key default gen_random_uuid(),
