@@ -22,8 +22,8 @@ from typing import List, Dict
 
 import requests
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+SUPABASE_URL = os.getenv("https://vxiqrzwjhkgchqrlxydk.supabase.co")
+SUPABASE_KEY = os.getenv("sb_publishable_gihRNMxAPmzYT6lak1DCsg_vij37qn4Y")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     sys.exit("ERROR: SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
