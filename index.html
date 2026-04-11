@@ -1036,7 +1036,7 @@ function hidePinModal(){$('landing-main').style.display='flex';$('pin-modal').cl
 function showEducatorModal(){$('landing-main').style.display='none';$('edu-modal').classList.add('visible');$('edu-email').focus();}
 function hideEducatorModal(){$('landing-main').style.display='flex';$('edu-modal').classList.remove('visible');$('edu-email').value='';$('edu-password').value='';$('edu-error').style.display=$('edu-role-error').style.display='none';}
 
-// ── Educator: load & setup ────────────────────────────────────────
+// ── Educator: load & setup (Check line 1045) ────────────────────────────────────────
 async function goEducator(){
   showScreen('educator');
   $('data-loader').style.display='block';
