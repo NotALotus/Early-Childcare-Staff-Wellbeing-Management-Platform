@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#5B8A6F">
+<meta name="description" content="WellSpace — Early Childhood Wellbeing & Safety Platform">
+<title>WellSpace</title>
+<!-- PWA manifest injected via JS below -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sage:#5B8A6F;--sage-mid:#7BA896;--sage-light:#B8D4CB;
+  --sage-pale:#E8F2EE;--sage-xpale:#F2F8F5;
+  --sky:#5B85AA;--sky-mid:#7FAACC;--sky-light:#B8D4E8;--sky-pale:#EAF3F9;
+  --warm:#D4956A;--warm-pale:#FAF0E8;
+  --cream:#FDFAF6;--cream-mid:#F5EFE6;--cream-warm:#EDE7DC;
+  --ink:#2A3828;--ink-mid:#4A5E52;--ink-soft:#7A9285;--ink-ghost:#B0C4BC;
+  --danger:#C4594A;--warn:#C4873A;--good:#4A8C6A;
+  --card-bg:#FFFFFF;--card-border:#DDE9E4;--page-bg:#F4F8F5;
+  --radius-sm:8px;--radius:14px;--radius-lg:20px;--radius-xl:28px;
+  --shadow-sm:0 1px 3px rgba(42,56,40,.06),0 2px 8px rgba(42,56,40,.05);
+  --shadow:0 2px 8px rgba(42,56,40,.08),0 4px 20px rgba(42,56,40,.07);
+  --shadow-lg:0 8px 32px rgba(42,56,40,.12),0 2px 8px rgba(42,56,40,.06);
+}
+html.dark{
+  --sage:#7DC4A0;--sage-mid:#5B9E7A;--sage-light:#2A5040;
+  --sage-pale:#172E24;--sage-xpale:#121E18;
+  --sky:#7FAACC;--sky-light:#1E3A52;--sky-pale:#111E2A;
+  --warm-pale:#2A1E12;
+  --cream:#1A2620;--cream-mid:#1E2E28;--cream-warm:#222E28;
+  --ink:#D8EEE5;--ink-mid:#A8C8BA;--ink-soft:#6A9285;--ink-ghost:#3A5A50;
+  --card-bg:#1A2620;--card-border:#2A4038;--page-bg:#101A14;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--page-bg);color:var(--ink);
+  line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:400;line-height:1.2}
+h3,h4{font-weight:600;line-height:1.3}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+/* ── Cards ── */
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow-sm)}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;
+  border:none;cursor:pointer;border-radius:50px;
+  transition:all .2s cubic-bezier(.4,0,.2,1);padding:11px 22px;line-height:1}
+.btn-primary{background:var(--sage);color:#fff;box-shadow:0 2px 8px rgba(91,138,111,.3)}
+.btn-primary:hover:not(:disabled){background:var(--ink-mid);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-secondary{background:transparent;color:var(--sage);border:1.5px solid var(--sage-light)}
+.btn-secondary:hover{background:var(--sage-pale);border-color:var(--sage)}
+.btn-ghost{background:transparent;color:var(--ink-soft);padding:9px 16px}
+.btn-ghost:hover{background:var(--sage-pale);color:var(--ink)}
+.btn-sm{font-size:13px;padding:8px 16px}
+.btn-lg{font-size:15px;padding:14px 28px}
+/* ── Inputs ── */
+.input{width:100%;padding:12px 16px;border:1.5px solid var(--card-border);
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;
+  color:var(--ink);background:var(--cream);outline:none;transition:border-color .15s,box-shadow .15s}
+.input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(91,138,111,.12)}
+.input::placeholder{color:var(--ink-ghost)}
+textarea.input{resize:vertical;min-height:100px}
+select.input{cursor:pointer}
+/* ── Chips ── */
+.chip{display:inline-flex;align-items:center;padding:8px 16px;border-radius:50px;
+  border:1.5px solid var(--card-border);background:var(--cream);font-size:13px;
+  font-weight:500;cursor:pointer;transition:all .15s;color:var(--ink-mid);
+  font-family:'DM Sans',sans-serif}
+.chip:hover{border-color:var(--sage-mid);color:var(--sage);background:var(--sage-xpale)}
+.chip.active{border-color:var(--sage);background:var(--sage-pale);color:var(--sage);font-weight:600}
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;
+  font-size:11px;font-weight:600;letter-spacing:.3px}
+/* ── Skeleton loaders ── */
+.skeleton{background:linear-gradient(90deg,var(--cream-warm) 25%,var(--cream-mid) 50%,var(--cream-warm) 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:var(--radius-sm)}
+@keyframes shimmer{from{background-position:200% center}to{background-position:-200% center}}
+.skel-line{height:14px;margin-bottom:10px}
+.skel-card{height:80px;margin-bottom:12px;border-radius:var(--radius)}
+/* ── Toast queue ── */
+#toast-container{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast-item{background:var(--ink);color:var(--cream);padding:10px 20px;border-radius:50px;
+  font-size:13px;font-weight:500;opacity:0;transform:translateY(12px);
+  transition:all .3s;white-space:nowrap;box-shadow:var(--shadow-lg);pointer-events:none}
+.toast-item.show{opacity:1;transform:translateY(0)}
+.toast-item.error{background:var(--danger)}
+.toast-item.success{background:var(--good)}
+/* ── Offline banner ── */
+#offline-banner{display:none;position:fixed;top:0;left:0;right:0;
+  background:#D4873A;color:#fff;text-align:center;padding:8px 16px;
+  font-size:13px;font-weight:600;z-index:1000}
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes pulseBorder{0%,100%{box-shadow:0 0 0 0 rgba(91,138,111,.4)}60%{box-shadow:0 0 0 10px rgba(91,138,111,0)}}
+.animate-in{animation:fadeUp .4s cubic-bezier(.4,0,.2,1) both}
+.animate-in-1{animation:fadeUp .4s cubic-bezier(.4,0,.2,1) .08s both}
+.animate-in-2{animation:fadeUp .4s cubic-bezier(.4,0,.2,1) .16s both}
+.animate-in-3{animation:fadeUp .4s cubic-bezier(.4,0,.2,1) .24s both}
+.pulse-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--sage);animation:pulse 2s ease infinite}
+/* ── Landing ── */
+#screen-landing{background:var(--cream)}
+.landing-hero{background:linear-gradient(160deg,#DEEEE6 0%,#E8F2EE 40%,#EAF3F9 100%);
+  padding:60px 24px 48px;text-align:center;position:relative;overflow:hidden}
+html.dark .landing-hero{background:linear-gradient(160deg,#0E2018 0%,#101A14 50%,#0E1820 100%)}
+.landing-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 80%,rgba(91,138,111,.08) 0%,transparent 50%),
+             radial-gradient(circle at 80% 20%,rgba(91,133,170,.08) 0%,transparent 50%);
+  pointer-events:none}
+.landing-logo{width:64px;height:64px;background:linear-gradient(135deg,var(--sage),var(--sky-mid));
+  border-radius:20px;display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin:0 auto 20px;box-shadow:0 4px 20px rgba(91,138,111,.25)}
+.role-cards{display:flex;flex-direction:column;gap:12px;max-width:420px;
+  margin:0 auto;padding:0 24px 40px}
+.role-card{background:var(--card-bg);border:1.5px solid var(--card-border);
+  border-radius:var(--radius-lg);padding:18px 20px;cursor:pointer;
+  display:flex;align-items:center;gap:16px;transition:all .2s cubic-bezier(.4,0,.2,1);
+  box-shadow:var(--shadow-sm);text-align:left}
+.role-card:hover{border-color:var(--sage-mid);box-shadow:var(--shadow);transform:translateY(-2px)}
+.role-icon{width:52px;height:52px;border-radius:14px;display:flex;
+  align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.role-icon.green{background:var(--sage-pale)}
+.role-icon.blue{background:var(--sky-pale)}
+/* ── Auth ── */
+.auth-modal{display:none;max-width:420px;margin:0 auto;padding:0 24px 40px;
+  animation:fadeUp .3s ease both}
+.auth-modal.visible{display:block}
+.auth-card{background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:var(--radius-xl);padding:28px 24px;box-shadow:var(--shadow)}
+.auth-field{margin-bottom:12px}
+.auth-field label{display:block;font-size:13px;font-weight:600;color:var(--ink-mid);margin-bottom:6px}
+.auth-error{color:var(--danger);font-size:13px;margin-bottom:10px;display:none}
+/* ── Educator header ── */
+.edu-header{background:linear-gradient(135deg,var(--sage) 0%,#4A7A62 100%);
+  padding:16px 20px 14px;color:#fff;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;box-shadow:0 2px 12px rgba(42,56,40,.15)}
+.edu-header-brand{display:flex;align-items:center;gap:10px}
+.edu-header-logo{width:34px;height:34px;background:rgba(255,255,255,.2);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.edu-content{flex:1;overflow-y:auto;padding:20px 18px 96px;max-width:600px;margin:0 auto;width:100%}
+/* ── Bottom nav ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card-bg);
+  border-top:1px solid var(--card-border);display:flex;padding:8px 0 10px;
+  box-shadow:0 -4px 20px rgba(42,56,40,.06);z-index:50}
+.nav-btn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:3px;padding:5px 2px;font-family:'DM Sans',sans-serif;transition:transform .1s}
+.nav-btn:active{transform:scale(.88)}
+.nav-btn .nav-label{font-size:10px;font-weight:600;color:var(--ink-ghost);transition:color .15s}
+.nav-btn.active .nav-label{color:var(--sage)}
+.nav-indicator{width:20px;height:2.5px;border-radius:2px;background:transparent;transition:background .15s;margin-top:2px}
+.nav-btn.active .nav-indicator{background:var(--sage)}
+/* ── Tabs ── */
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* ── Home widgets ── */
+.last-checkin-card{border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none;
+  background:linear-gradient(135deg,var(--sage-pale),var(--sky-pale));
+  border-color:var(--sage-light);margin-bottom:0;padding:16px 18px}
+.window-strip{border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:10px 18px;
+  font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.strip-open{background:#E8F5EE;color:var(--good);border:1px solid var(--sage-light);border-top:none}
+.strip-wait{background:var(--cream-mid);color:var(--ink-soft);border:1px solid var(--card-border);border-top:none}
+.strip-done{background:#E8F5EE;color:var(--good);border:1px solid var(--sage-light);border-top:none}
+.strip-missed{background:#FEF0EF;color:var(--danger);border:1px solid #F5C4C0;border-top:none}
+.action-grid{display:flex;flex-direction:column;gap:10px}
+.action-card{display:flex;align-items:center;gap:14px;padding:16px 18px;
+  border-radius:var(--radius);cursor:pointer;border:1.5px solid transparent;
+  transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-sm)}
+.action-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.action-card.checkin-card{background:var(--sage-xpale);border-color:var(--sage-light)}
+.action-card.concern-card{background:var(--sky-pale);border-color:var(--sky-light)}
+.action-card.incident-card{background:var(--warm-pale);border-color:#E8C9A8}
+.action-icon{width:46px;height:46px;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.action-icon.sage{background:var(--sage-pale)}
+.action-icon.sky{background:var(--sky-pale)}
+.action-icon.warm{background:var(--warm-pale)}
+.info-banner{margin-top:14px;padding:12px 16px;background:var(--cream-mid);
+  border-radius:var(--radius-sm);font-size:12px;color:var(--ink-soft);
+  display:flex;align-items:flex-start;gap:8px}
+.win-notif{display:none;align-items:center;gap:10px;padding:12px 16px;
+  background:#FFF8E8;border:1.5px solid #F0C060;border-radius:var(--radius);margin-bottom:14px;font-size:13px}
+html.dark .win-notif{background:#2A2000;border-color:#806000}
+.win-notif .wn-msg{flex:1;color:#8A5E00;font-weight:500;cursor:pointer}
+html.dark .win-notif .wn-msg{color:#C4A040}
+.win-notif .wn-close{background:none;border:none;cursor:pointer;color:#8A5E00;font-size:16px;padding:0}
+/* ── Overview panel ── */
+.overview-panel{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0}
+.overview-panel.open{max-height:1400px;opacity:1}
+.period-btns{display:flex;gap:6px;margin-bottom:14px}
+.period-btn{flex:1;padding:8px 4px;border:1.5px solid var(--card-border);border-radius:var(--radius-sm);
+  background:var(--cream);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);
+  font-family:'DM Sans',sans-serif;transition:all .15s}
+.period-btn.active{border-color:var(--sage);background:var(--sage-pale);color:var(--sage)}
+.insight-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:50px;
+  background:var(--sage-xpale);border:1px solid var(--card-border);font-size:12px;font-weight:500;color:var(--ink-mid)}
+/* ── Check-in ── */
+.step-bar{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .2s}
+.step-dot.done{background:var(--sage);color:#fff}
+.step-dot.current{background:var(--sage);color:#fff;box-shadow:0 0 0 4px var(--sage-pale)}
+.step-dot.future{background:var(--cream-warm);color:var(--ink-ghost)}
+.step-line{flex:1;height:2px;border-radius:1px;background:var(--card-border);transition:background .2s}
+.step-line.done{background:var(--sage-light)}
+.mood-grid{display:flex;gap:8px;margin-bottom:22px}
+.mood-btn{flex:1;padding:14px 4px;border:2px solid var(--card-border);border-radius:var(--radius);
+  background:var(--cream);cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:5px;transition:all .15s;font-family:'DM Sans',sans-serif}
+.mood-btn:hover{border-color:var(--sage-mid);background:var(--sage-xpale)}
+.stress-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.stress-btn{width:52px;height:52px;border-radius:var(--radius-sm);border:2px solid var(--card-border);
+  background:var(--cream);font-size:18px;font-weight:700;cursor:pointer;
+  color:var(--ink);font-family:'DM Sans',sans-serif;transition:all .15s}
+.stress-btn:hover{border-color:var(--sage)}
+.lifestyle-label{font-size:13px;font-weight:600;color:var(--ink-mid);margin-bottom:9px}
+.lifestyle-opts{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.checkin-locked{text-align:center;padding:36px 20px;background:var(--sage-xpale);
+  border-radius:var(--radius-lg);border:1.5px dashed var(--sage-light);margin-bottom:20px}
+.success-state{text-align:center;padding:40px 20px}
+.success-icon{font-size:64px;margin-bottom:16px}
+.success-pill{display:inline-block;padding:10px 20px;background:var(--sage-pale);
+  border-radius:50px;font-size:13px;color:var(--sage);font-weight:500;margin-bottom:20px}
+/* ── Concern ── */
+.anon-banner{display:flex;align-items:center;gap:10px;padding:12px 16px;
+  background:var(--sage-xpale);border:1px solid var(--sage-light);border-radius:var(--radius-sm);
+  font-size:13px;color:var(--sage);margin-bottom:20px;font-weight:500}
+/* ── Incident ── */
+.inc-toggle{display:flex;gap:0;margin-bottom:18px;background:var(--cream-warm);
+  border-radius:var(--radius-sm);padding:3px}
+.inc-toggle-btn{flex:1;padding:9px 4px;border:none;background:none;font-size:13px;
+  font-weight:600;cursor:pointer;border-radius:calc(var(--radius-sm) - 1px);
+  color:var(--ink-soft);font-family:'DM Sans',sans-serif;transition:all .15s}
+.inc-toggle-btn.active{background:var(--card-bg);color:var(--sage);box-shadow:var(--shadow-sm)}
+.inc-section-label{font-size:11px;font-weight:700;color:var(--ink-soft);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;margin-top:20px;
+  padding-bottom:8px;border-bottom:1px solid var(--card-border)}
+.inc-section-label:first-child{margin-top:0}
+.sev-grid{display:flex;gap:8px}
+.sev-btn{flex:1;padding:10px 4px;border-radius:var(--radius-sm);
+  border:2px solid var(--card-border);background:var(--cream);
+  font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.yn-row{display:flex;gap:8px}
+.yn-btn{flex:1;padding:10px 4px;border:2px solid var(--card-border);
+  border-radius:var(--radius-sm);background:var(--cream);font-size:13px;
+  font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;color:var(--ink-mid)}
+.yn-btn.active.yes{border-color:var(--sage);background:var(--sage-pale);color:var(--sage)}
+.yn-btn.active.no{border-color:var(--sky);background:var(--sky-pale);color:var(--sky)}
+.reg-flag{display:none;align-items:flex-start;gap:10px;padding:12px 14px;
+  background:#FEF0EF;border:1.5px solid #F5C4C0;border-radius:var(--radius-sm);
+  font-size:13px;color:var(--danger);margin-bottom:14px;font-weight:500}
+.char-count{text-align:right;font-size:11px;color:var(--ink-ghost);margin-top:4px}
+.field-label{display:block;font-size:13px;font-weight:600;color:var(--ink-mid);margin-bottom:8px}
+.field-req{color:var(--danger)}
+.field-opt{font-weight:400;color:var(--ink-ghost)}
+.form-gap{margin-bottom:16px}
+.inc-status{display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;
+  font-size:11px;font-weight:700}
+.inc-status.open{background:#FFF0D9;color:#9A5C00}
+.inc-status.reviewed{background:var(--sky-pale);color:var(--sky)}
+.inc-status.resolved{background:var(--sage-pale);color:var(--sage)}
+/* ── Incident management improvements ── */
+/* Severity left-border accents on manager cards */
+.inc-card-critical{border-left:4px solid #C44040 !important}
+.inc-card-high    {border-left:4px solid #C47A30 !important}
+.inc-card-medium  {border-left:4px solid #C4A030 !important}
+.inc-card-low     {border-left:4px solid #3A8B5A !important}
+/* Regulatory banner — prominent, not a footnote */
+.reg-banner{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;
+  background:#FEF0EF;border:1.5px solid #F5C4C0;border-radius:var(--radius-sm);
+  font-size:13px;color:var(--danger);font-weight:600;margin-bottom:12px}
+/* Manager notes area */
+.mgr-notes-area{width:100%;padding:9px 12px;border:1.5px solid var(--card-border);
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;
+  color:var(--ink);background:var(--cream);resize:vertical;min-height:68px;
+  outline:none;transition:border-color .15s}
+.mgr-notes-area:focus{border-color:var(--sage)}
+.mgr-notes-area::placeholder{color:var(--ink-ghost)}
+html.dark .mgr-notes-area{background:#0E1D2E;border-color:var(--card-border);color:var(--ink)}
+/* Filter bar */
+.inc-filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.filter-chip{display:inline-flex;align-items:center;padding:6px 13px;border-radius:50px;
+  border:1.5px solid var(--card-border);background:var(--cream);font-size:12px;
+  font-weight:600;cursor:pointer;transition:all .15s;color:var(--ink-soft);
+  font-family:'DM Sans',sans-serif}
+.filter-chip:hover{border-color:var(--sage-mid);color:var(--sage)}
+.filter-chip.active{border-color:var(--sage);background:var(--sage-pale);color:var(--sage)}
+.filter-chip.crit.active{border-color:#C44040;background:#FEF0EF;color:#C44040}
+.filter-chip.high.active{border-color:#C47A30;background:#FFF5E8;color:#C47A30}
+/* Sort select */
+.sort-select{padding:6px 12px;border:1.5px solid var(--card-border);border-radius:50px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink-soft);
+  background:var(--cream);cursor:pointer;outline:none;margin-left:auto}
+html.dark .sort-select{background:var(--card-bg);color:var(--ink)}
+/* Incident summary mini-stats */
+.inc-stat-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.inc-stat-pill{flex:1;min-width:90px;padding:12px 14px;border-radius:var(--radius);
+  background:var(--card-bg);border:1px solid var(--card-border);text-align:center;
+  box-shadow:var(--shadow-sm)}
+.inc-stat-num{font-size:24px;font-weight:700;line-height:1}
+.inc-stat-lbl{font-size:11px;color:var(--ink-soft);margin-top:4px;font-weight:500}
+/* Export button */
+.export-btn{background:var(--cream-mid);border:1.5px solid var(--card-border);
+  color:var(--ink-mid);border-radius:50px;padding:6px 14px;font-size:12px;
+  font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.export-btn:hover{background:var(--sage-pale);border-color:var(--sage);color:var(--sage)}
+/* Audit trail timestamp row */
+.audit-row{font-size:11px;color:var(--ink-ghost);margin-top:6px;display:flex;
+  flex-wrap:wrap;gap:10px;padding-top:6px;border-top:1px solid var(--card-border)}
+/* Educator history — manager note display */
+.edu-mgr-note{padding:9px 12px;background:var(--sage-xpale);border-radius:var(--radius-sm);
+  border-left:3px solid var(--sage-light);font-size:12px;color:var(--ink-mid);
+  margin-top:8px;line-height:1.55}
+/* Status legend tooltip */
+.status-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;
+  padding:10px 14px;background:var(--cream-mid);border-radius:var(--radius-sm);
+  font-size:12px;color:var(--ink-soft)}
+.status-legend span{display:flex;align-items:center;gap:5px}
+/* ── Incident detail view ── */
+.inc-detail-overlay{position:fixed;inset:0;background:rgba(26,46,40,.45);z-index:200;
+  display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+.inc-detail-panel{background:var(--card-bg);width:100%;max-width:680px;max-height:92vh;
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;display:flex;flex-direction:column;
+  overflow:hidden;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.inc-detail-header{padding:16px 20px 14px;border-bottom:1px solid var(--card-border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.inc-detail-body{flex:1;overflow-y:auto;padding:18px 20px}
+.inc-detail-footer{padding:14px 20px;border-top:1px solid var(--card-border);
+  background:var(--card-bg);flex-shrink:0}
+.inc-close-btn{background:var(--cream-warm);border:none;border-radius:50%;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;flex-shrink:0;color:var(--ink-soft);transition:background .15s}
+.inc-close-btn:hover{background:var(--sage-pale);color:var(--sage)}
+/* Note thread */
+.note-thread{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.note-item{padding:11px 14px;background:var(--sage-xpale);border-radius:var(--radius);
+  border-left:3px solid var(--sage-light)}
+html.dark .note-item{background:var(--sage-pale);border-left-color:var(--sage)}
+.note-meta{font-size:11px;color:var(--ink-ghost);margin-bottom:5px;display:flex;
+  align-items:center;gap:8px;flex-wrap:wrap}
+.note-author{font-weight:600;color:var(--ink-soft)}
+.note-text{font-size:13px;color:var(--ink);line-height:1.55}
+.note-empty{text-align:center;padding:24px;color:var(--ink-ghost);font-size:13px}
+/* Clickable incident row */
+.inc-row-card{cursor:pointer;transition:box-shadow .15s,transform .15s}
+.inc-row-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.inc-row-card:hover .inc-open-hint{opacity:1}
+.inc-open-hint{font-size:11px;color:var(--sage);font-weight:600;opacity:0;
+  transition:opacity .15s;margin-left:auto;flex-shrink:0}
+/* Section divider inside detail */
+.detail-section{margin-bottom:16px}
+.detail-section-title{font-size:11px;font-weight:700;color:var(--ink-soft);
+  text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;
+  padding-bottom:7px;border-bottom:1px solid var(--card-border)}
+/* ── Manager ── */
+.mgr-header{background:linear-gradient(135deg,#2A3E52 0%,#1E3044 100%);
+  padding:16px 20px 0;color:#fff;flex-shrink:0}
+html.dark .mgr-header{background:linear-gradient(135deg,#141E2A 0%,#0E1822 100%)}
+.mgr-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.mgr-logo{width:34px;height:34px;background:rgba(255,255,255,.15);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.mgr-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:0}
+.mgr-tab{padding:9px 16px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
+  border-radius:8px 8px 0 0;cursor:pointer;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:600;white-space:nowrap;transition:all .15s}
+.mgr-tab.active{background:rgba(255,255,255,.18);color:#fff}
+.mgr-content{flex:1;overflow-y:auto;padding:20px 18px;max-width:860px;margin:0 auto;width:100%}
+.stat-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat-card{flex:1;min-width:120px;background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-val{font-size:28px;font-weight:700;line-height:1;color:var(--ink)}
+.stat-label{font-size:12px;color:var(--ink-soft);margin-top:5px;font-weight:500}
+.chart-card{background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.chart-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.chart-wrap{position:relative;height:160px;overflow:hidden}
+.chart-empty{text-align:center;padding:30px;color:var(--ink-soft);font-size:13px}
+.chart-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.chart-half{flex:1;min-width:180px}
+.mgr-list-item{background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.mgr-section-sub{font-size:13px;color:var(--ink-soft);margin-bottom:16px}
+.refresh-btn{background:var(--sage-pale);border:1.5px solid var(--sage-light);color:var(--sage);
+  border-radius:var(--radius-sm);padding:6px 14px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.status-select{font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;
+  border:1.5px solid var(--card-border);background:var(--card-bg);color:var(--ink);
+  cursor:pointer;font-family:'DM Sans',sans-serif}
+.signout-btn{background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.85);
+  border-radius:var(--radius-sm);padding:6px 14px;cursor:pointer;font-size:12px;
+  font-family:'DM Sans',sans-serif;font-weight:600;transition:background .15s}
+.signout-btn:hover{background:rgba(255,255,255,.22)}
+/* Dark mode toggle */
+.dark-toggle{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;
+  padding:6px 10px;cursor:pointer;font-size:14px;transition:background .15s}
+.dark-toggle:hover{background:rgba(255,255,255,.22)}
+/* scroll-to-top */
+#scroll-top{position:fixed;bottom:96px;right:16px;width:40px;height:40px;
+  background:var(--sage);border:none;border-radius:50%;color:#fff;font-size:18px;
+  cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;
+  justify-content:center;z-index:49;transition:all .2s}
+#scroll-top.visible{display:flex}
+/* Return to top for manager */
+canvas{max-width:100%}
+/* Collapsible incident form sections */
+.inc-details-section{border:1px solid var(--card-border);border-radius:var(--radius-sm);margin-bottom:14px;overflow:hidden}
+.inc-details-section>summary{padding:10px 14px;background:var(--cream-mid);user-select:none;list-style:none;font-size:13px;font-weight:600;color:var(--ink-mid)}
+.inc-details-section>summary::-webkit-details-marker{display:none}
+.inc-details-section>summary .inc-details-toggle{transition:transform .2s;font-size:12px;color:var(--ink-ghost)}
+.inc-details-section[open]>summary .inc-details-toggle{transform:rotate(180deg)}
+.inc-details-section>summary:hover{background:var(--sage-xpale)}
+.inc-details-section .form-gap{padding:0 14px}
+.inc-details-section .form-gap:last-child{padding-bottom:12px}
+html.dark .inc-details-section{border-color:var(--card-border)}
+html.dark .inc-details-section>summary{background:var(--cream-warm)}
+@media(max-width:400px){.mood-btn{padding:12px 2px}}
+</style>
+</head>
+<body>
+
+<div id="offline-banner">📶 You're offline — submissions will sync when reconnected</div>
+<div id="toast-container"></div>
+<button id="scroll-top" onclick="scrollToTop()" title="Back to top">↑</button>
+
+<!-- ════════════════ LANDING ════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-hero">
+    <div class="landing-logo">🌿</div>
+    <h1 style="font-size:clamp(32px,8vw,44px);color:var(--ink);margin-bottom:10px;letter-spacing:-.5px">WellSpace</h1>
+    <p style="color:var(--ink-soft);font-size:15px;max-width:320px;margin:0 auto 36px">Supporting early childhood educators — one check-in at a time</p>
+  </div>
+  <div id="landing-main" class="role-cards animate-in">
+    <div class="role-card animate-in-1" onclick="showEducatorModal()">
+      <div class="role-icon green">👩‍🏫</div>
+      <div><div style="font-size:16px;font-weight:600;color:var(--ink)">I'm an Educator</div><div style="font-size:13px;color:var(--ink-soft);margin-top:2px">Check in, report concerns &amp; incidents</div></div>
+      <span style="margin-left:auto;color:var(--ink-ghost);font-size:18px">›</span>
+    </div>
+    <div class="role-card animate-in-2" onclick="showPinModal()">
+      <div class="role-icon blue">📊</div>
+      <div><div style="font-size:16px;font-weight:600;color:var(--ink)">I'm a Manager</div><div style="font-size:13px;color:var(--ink-soft);margin-top:2px">View analytics &amp; staff reports</div></div>
+      <span style="margin-left:auto;color:var(--ink-ghost);font-size:18px">›</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px">
+      <p style="font-size:12px;color:var(--ink-ghost);display:flex;align-items:center;gap:6px">🔒 Concern reports are always fully anonymous</p>
+      <button onclick="toggleDarkMode()" style="background:var(--cream-warm);border:1px solid var(--card-border);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;color:var(--ink-soft)" title="Toggle dark mode" id="landing-dark-btn">🌙</button>
+    </div>
+  </div>
+  <!-- Manager Login -->
+  <div id="pin-modal" class="auth-modal">
+    <div class="auth-card">
+      <h2 style="font-size:20px;font-family:'Fraunces',serif;margin-bottom:6px">Manager Login</h2>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px">Sign in to access the analytics dashboard</p>
+      <div class="auth-field"><label>Email address</label><input id="mgr-email" type="email" class="input" placeholder="you@centre.com.au" onkeydown="if(event.key==='Enter')App.loginManager()"></div>
+      <div class="auth-field"><label>Password</label>
+        <div style="position:relative;display:flex;align-items:center;">
+          <input id="mgr-password" type="password" class="input" placeholder="••••••••" style="padding-right:38px;" onkeydown="if(event.key==='Enter')App.loginManager()">
+          <button type="button" tabindex="-1" onclick="togglePassword('mgr-password', this)" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);" aria-label="Show password">👁️</button>
+        </div>
+      </div>
+      <p id="pin-error" class="auth-error">Incorrect email or password.</p>
+      <p id="pin-role-error" class="auth-error">This account does not have manager access.</p>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-ghost" onclick="hidePinModal()">← Back</button>
+        <button class="btn btn-primary" onclick="App.loginManager()" style="flex:1" id="login-btn">Sign in →</button>
+      </div>
+    </div>
+  </div>
+  <!-- Educator Login -->
+  <div id="edu-modal" class="auth-modal">
+    <div class="auth-card">
+      <h2 style="font-size:20px;font-family:'Fraunces',serif;margin-bottom:6px">Educator Login</h2>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px">Sign in to record your wellbeing &amp; reports</p>
+      <div class="auth-field"><label>Email address</label><input id="edu-email" type="email" class="input" placeholder="you@centre.com.au" onkeydown="if(event.key==='Enter')App.loginEducator()"></div>
+      <div class="auth-field"><label>Password</label>
+        <div style="position:relative;display:flex;align-items:center;">
+          <input id="edu-password" type="password" class="input" placeholder="••••••••" style="padding-right:38px;" onkeydown="if(event.key==='Enter')App.loginEducator()">
+          <button type="button" tabindex="-1" onclick="togglePassword('edu-password', this)" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);" aria-label="Show password">👁️</button>
+        </div>
+      </div>
+      <p id="edu-error" class="auth-error">Incorrect email or password.</p>
+      <p id="edu-role-error" class="auth-error">This account does not have educator access.</p>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-ghost" onclick="hideEducatorModal()">← Back</button>
+        <button class="btn btn-primary" onclick="App.loginEducator()" style="flex:1" id="edu-login-btn">Sign in →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ EDUCATOR ════════════════ -->
+<div id="screen-educator" class="screen">
+  <div class="edu-header">
+    <div class="edu-header-brand">
+      <div class="edu-header-logo">🌿</div>
+      <span style="font-family:'Fraunces',serif;font-size:17px;font-weight:400">WellSpace</span>
+      <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;font-size:11px">Educator</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="edu-name-badge" style="font-size:12px;color:rgba(255,255,255,.7)"></span>
+      <button class="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+      <button class="signout-btn" onclick="App.signOut()">Sign out</button>
+    </div>
+  </div>
+  <div class="edu-content" id="edu-scroll-container">
+    <!-- HOME -->
+    <div id="tab-home" class="tab-content active">
+      <div id="win-notif" class="win-notif">
+        <span style="font-size:18px;flex-shrink:0">⏰</span>
+        <span id="win-notif-msg" class="wn-msg" onclick="UI.switchTab('checkin')"></span>
+        <button class="wn-close" onclick="UI.dismissWinNotif()">✕</button>
+      </div>
+      <div class="animate-in" style="margin-bottom:20px">
+        <div id="greeting-date" style="font-size:13px;color:var(--ink-soft)"></div>
+        <h2 id="greeting-text" style="font-size:24px;color:var(--ink);margin:4px 0 6px"></h2>
+        <p style="font-size:13px;color:var(--ink-soft)">Your voice matters here — reports are always anonymous.</p>
+      </div>
+      <div id="last-checkin-card" class="last-checkin-card card animate-in-1"></div>
+      <div id="window-strip" class="window-strip strip-wait" style="display:none"></div>
+      <div id="data-loader" style="display:none;padding:20px 0">
+        <div class="skel-card skeleton"></div>
+        <div class="skel-line skeleton" style="width:60%"></div>
+        <div class="skel-line skeleton" style="width:40%"></div>
+      </div>
+      <div id="overview-panel" class="overview-panel">
+        <div class="card" style="margin-bottom:14px;border-color:var(--sage-light)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:15px;font-weight:700">My Wellbeing Overview</div>
+            <button onclick="UI.toggleOverview()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-ghost)">✕</button>
+          </div>
+          <div class="period-btns">
+            <button class="period-btn active" id="period-week"  onclick="UI.switchPeriod('week')">Week</button>
+            <button class="period-btn"        id="period-month" onclick="UI.switchPeriod('month')">Month</button>
+            <button class="period-btn"        id="period-year"  onclick="UI.switchPeriod('year')">Year</button>
+          </div>
+          <div id="overview-daterange" style="font-size:11px;color:var(--ink-ghost);text-align:center;margin-bottom:12px"></div>
+          <div id="overview-summary" style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;padding:10px 13px;background:var(--sage-xpale);border-radius:var(--radius-sm);border:1px solid var(--card-border);line-height:1.6"></div>
+          <div id="overview-pills" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+          <div id="overview-chart-empty" style="text-align:center;padding:24px;color:var(--ink-soft);font-size:13px;display:none">No check-ins for this period yet.</div>
+          <div id="overview-chart-wrap" style="position:relative;height:175px;overflow:hidden;display:none"><canvas id="overview-chart"></canvas></div>
+          <div id="overview-legend" style="display:none;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center"></div>
+          <div id="overview-correlations" style="margin-top:14px"></div>
+        </div>
+      </div>
+      <h3 style="font-size:14px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Quick Actions</h3>
+      <div class="action-grid">
+        <div class="action-card checkin-card animate-in-2" onclick="UI.switchTab('checkin')">
+          <div class="action-icon sage">💚</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Wellbeing Check-in</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Morning 7:00–9:30 AM · Afternoon 2:00–4:00 PM</div></div>
+          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
+        </div>
+        <div class="action-card concern-card animate-in-2" onclick="UI.switchTab('concern')">
+          <div class="action-icon sky">🔔</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Report a Concern</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Anonymous workplace report</div></div>
+          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
+        </div>
+        <div class="action-card incident-card animate-in-3" onclick="UI.switchTab('incident')">
+          <div class="action-icon warm">⚠️</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Report an Incident</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Near-miss, injury, or safety issue</div></div>
+          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
+        </div>
+      </div>
+      <div class="info-banner animate-in-3">🔒 <span><strong>Privacy protected.</strong> Management only sees aggregated trends — never individual responses.</span></div>
+      <div id="concern-session-note" style="display:none;margin-top:8px;padding:10px 14px;background:var(--sky-pale);border:1px solid var(--sky-light);border-radius:var(--radius-sm);font-size:12px;color:var(--sky);display:none;align-items:center;gap:8px">
+        <span>✅</span><span id="concern-session-text"></span>
+      </div>
+    </div>
+    <!-- CHECK-IN -->
+    <div id="tab-checkin" class="tab-content">
+      <div style="margin-bottom:18px"><h2 style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:4px">Wellbeing Check-in</h2><p style="font-size:13px;color:var(--ink-soft)">Morning: 7:00–9:30 AM · Afternoon: 2:00–4:00 PM</p></div>
+      <div id="checkin-locked" class="checkin-locked" style="display:none">
+        <div id="cl-icon" style="font-size:44px;margin-bottom:12px"></div>
+        <div id="cl-title" style="font-size:17px;font-weight:600;margin-bottom:8px"></div>
+        <div id="cl-sub" style="font-size:13px;color:var(--ink-soft);line-height:1.7"></div>
+      </div>
+      <div id="checkin-form">
+        <div class="step-bar" id="ci-steps"></div>
+        <div id="ci-step-0">
+          <h3 style="font-size:16px;margin-bottom:16px">How are you feeling right now?</h3>
+          <div class="mood-grid" id="mood-btns"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="CI.next(0)" id="ci-next-0" disabled>Continue →</button>
+        </div>
+        <div id="ci-step-1" style="display:none">
+          <h3 style="font-size:16px;margin-bottom:6px">What's your stress level today?</h3>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-ghost);margin-bottom:14px;padding:0 4px"><span>Very calm</span><span>Very stressed</span></div>
+          <div class="stress-row" id="stress-btns"></div>
+          <div style="text-align:center;margin-bottom:22px"><span id="stress-badge" class="badge" style="font-size:13px;padding:6px 14px"></span></div>
+          <div style="display:flex;gap:10px"><button class="btn btn-secondary" onclick="CI.back(1)" style="flex:1">← Back</button><button class="btn btn-primary" onclick="CI.next(1)" style="flex:2">Continue →</button></div>
+        </div>
+        <div id="ci-step-2" style="display:none">
+          <h3 style="font-size:16px;margin-bottom:4px">Optional: Lifestyle check</h3>
+          <p style="font-size:13px;color:var(--ink-soft);margin-bottom:18px">Skip anything you'd prefer not to share</p>
+          <div class="lifestyle-group" data-key="sleep"><div class="lifestyle-label">😴 Sleep quality last night</div><div class="lifestyle-opts" data-options="Poor,Fair,Good,Excellent"></div></div>
+          <div class="lifestyle-group" data-key="energy"><div class="lifestyle-label">⚡ Energy level today</div><div class="lifestyle-opts" data-options="Exhausted,Low,Moderate,High"></div></div>
+          <div class="lifestyle-group" data-key="eating"><div class="lifestyle-label">🍎 Eating habits today</div><div class="lifestyle-opts" data-options="Skipped meals,Poor,Adequate,Good"></div></div>
+          <div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-secondary" onclick="CI.back(2)" style="flex:1">← Back</button><button class="btn btn-primary" onclick="CI.submit()" style="flex:2">Submit Check-in ✓</button></div>
+        </div>
+      </div>
+      <div id="checkin-success" style="display:none" class="success-state">
+        <div class="success-icon">✅</div>
+        <h2 id="ci-success-title" style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:8px">Check-in complete!</h2>
+        <p id="ci-success-sub" style="font-size:14px;color:var(--ink-soft);max-width:300px;margin:0 auto 20px"></p>
+        <div class="success-pill">💚 Your wellbeing matters. Take care of yourself today.</div><br>
+        <button class="btn btn-secondary" onclick="CI.reset();UI.switchTab('home')" style="margin-top:18px">← Back to Home</button>
+      </div>
+    </div>
+    <!-- CONCERN -->
+    <div id="tab-concern" class="tab-content">
+      <div style="margin-bottom:18px"><h2 style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:4px">Report a Concern</h2></div>
+      <div class="anon-banner">🔒 Fully anonymous — your identity is never revealed to management</div>
+      <div id="concern-form">
+        <div class="form-gap"><label class="field-label">Category <span class="field-req">*</span></label><div style="display:flex;flex-wrap:wrap;gap:8px" id="concern-cats"><button class="chip" onclick="Forms.selectConcernCat('Workload',this)">Workload</button><button class="chip" onclick="Forms.selectConcernCat('Safety',this)">Safety</button><button class="chip" onclick="Forms.selectConcernCat('Management',this)">Management</button><button class="chip" onclick="Forms.selectConcernCat('Workplace Culture',this)">Workplace Culture</button><button class="chip" onclick="Forms.selectConcernCat('Other',this)">Other</button></div></div>
+        <div class="form-gap"><label class="field-label">Describe your concern <span class="field-opt">(optional)</span></label><textarea class="input" id="concern-desc" oninput="Util.updateCharCount('concern-desc','concern-char')" maxlength="1000" placeholder="Share as much or as little as you're comfortable with…"></textarea><div class="char-count"><span id="concern-char">0</span> / 1000</div></div>
+        <div class="info-banner" style="margin-bottom:14px">ℹ️ Management only sees anonymised, aggregated data. Your response is never shown individually.</div>
+        <button class="btn btn-primary btn-lg" id="concern-submit" style="width:100%" onclick="Forms.submitConcern()" disabled>Submit Anonymously →</button>
+      </div>
+      <div id="concern-success" class="success-state" style="display:none">
+        <div class="success-icon">✅</div>
+        <h2 style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:8px">Report Received</h2>
+        <p style="font-size:14px;color:var(--ink-soft);max-width:300px;margin:0 auto 20px">Your concern has been submitted anonymously.</p>
+        <div class="success-pill">🔒 Your identity is fully protected</div><br>
+        <button class="btn btn-secondary" onclick="Forms.resetConcern();UI.switchTab('home')" style="margin-top:18px">← Back to Home</button>
+      </div>
+    </div>
+    <!-- INCIDENT -->
+    <div id="tab-incident" class="tab-content">
+      <div style="margin-bottom:14px"><h2 style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:4px">Incident Report</h2><p style="font-size:13px;color:var(--ink-soft)">Your name is visible to management for this report type</p></div>
+      <div class="inc-toggle"><button class="inc-toggle-btn active" id="inc-tog-new" onclick="UI.showIncidentView('new')">＋ New Report</button><button class="inc-toggle-btn" id="inc-tog-hist" onclick="UI.showIncidentView('history')">📋 My Reports</button></div>
+      <div id="incident-new-view">
+        <div id="reg-flag" class="reg-flag"><span style="font-size:16px;flex-shrink:0">⚠️</span><span>This incident type may require notification to the regulatory authority within <strong>24 hours</strong> under the National Law.</span></div>
+        <div id="incident-form">
+          <div class="inc-section-label">📅 When &amp; Where</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap" class="form-gap"><div style="flex:1;min-width:140px"><label class="field-label">Date <span class="field-req">*</span></label><input type="date" class="input" id="inc-date" oninput="Forms.checkIncidentValid();Forms.updateRegFlag()"></div><div style="flex:1;min-width:140px"><label class="field-label">Time <span class="field-req">*</span></label><input type="time" class="input" id="inc-time" oninput="Forms.checkIncidentValid()"></div></div>
+          <div class="form-gap"><label class="field-label">Location <span class="field-req">*</span></label><select class="input" id="inc-location" onchange="Forms.checkIncidentValid()"><option value="">Select location…</option><option>Classroom / Indoor Learning Area</option><option>Outdoor Play Area</option><option>Bathroom / Toilet Area</option><option>Kitchen / Food Prep Area</option><option>Hallway / Corridor</option><option>Reception / Entry</option><option>Car Park / Drop-off Zone</option><option>Other</option></select></div>
+          <div class="inc-section-label">👥 What &amp; Who</div>
+          <div class="form-gap"><label class="field-label">Category <span class="field-req">*</span></label><div style="display:flex;flex-wrap:wrap;gap:7px" id="incident-cats"><button class="chip" onclick="Forms.selectIncidentCat('Near Miss',this)">Near Miss</button><button class="chip" onclick="Forms.selectIncidentCat('Injury',this)">Injury</button><button class="chip" onclick="Forms.selectIncidentCat('Property Damage',this)">Property Damage</button><button class="chip" onclick="Forms.selectIncidentCat('Child Safety',this)">Child Safety</button><button class="chip" onclick="Forms.selectIncidentCat('Illness',this)">Illness</button><button class="chip" onclick="Forms.selectIncidentCat('Other',this)">Other</button></div></div>
+          <div class="form-gap"><label class="field-label">Who was involved? <span class="field-req">*</span></label><div style="display:flex;flex-wrap:wrap;gap:7px" id="inc-involved-btns"><button class="chip" onclick="Forms.selectInvolved('Child',this)">Child</button><button class="chip" onclick="Forms.selectInvolved('Educator',this)">Educator</button><button class="chip" onclick="Forms.selectInvolved('Visitor',this)">Visitor</button><button class="chip" onclick="Forms.selectInvolved('Multiple People',this)">Multiple People</button><button class="chip" onclick="Forms.selectInvolved('Other',this)">Other</button></div></div>
+          <div class="form-gap"><label class="field-label">Severity <span class="field-req">*</span></label><div class="sev-grid" id="sev-btns"><button class="sev-btn" onclick="Forms.selectSeverity('Low',this)" style="color:#3A8B5A">Low</button><button class="sev-btn" onclick="Forms.selectSeverity('Medium',this)" style="color:#C47A30">Medium</button><button class="sev-btn" onclick="Forms.selectSeverity('High',this)" style="color:#C44040">High</button><button class="sev-btn" onclick="Forms.selectSeverity('Critical',this)" style="color:#7A1A1A">Critical</button></div></div>
+          <div class="form-gap"><label class="field-label">Description <span class="field-req">*</span></label><textarea class="input" id="inc-desc" oninput="Forms.checkIncidentValid();Util.updateCharCount('inc-desc','inc-char')" maxlength="2000" placeholder="Describe what happened, the sequence of events, and any contributing factors…" style="min-height:110px"></textarea><div class="char-count"><span id="inc-char">0</span> / 2000</div></div>
+          <details class="inc-details-section" open>
+            <summary class="inc-section-label" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <span>⚡ Immediate Response</span>
+              <span class="inc-details-toggle">▾</span>
+            </summary>
+            <div class="form-gap"><label class="field-label">Was first aid provided?</label><div class="yn-row" id="inc-firstaid-btns"><button class="yn-btn yes" onclick="Forms.selectYN('firstaid','yes',this)">Yes</button><button class="yn-btn no" onclick="Forms.selectYN('firstaid','no',this)">No</button></div></div>
+            <div class="form-gap"><label class="field-label">Were emergency services called?</label><div class="yn-row" id="inc-emergency-btns"><button class="yn-btn yes" onclick="Forms.selectYN('emergency','yes',this)">Yes</button><button class="yn-btn no" onclick="Forms.selectYN('emergency','no',this)">No</button></div></div>
+            <div class="form-gap"><label class="field-label">Was a parent/guardian notified?</label><div class="yn-row" id="inc-parent-btns"><button class="yn-btn yes" onclick="Forms.selectYN('parent','yes',this)">Yes</button><button class="yn-btn no" onclick="Forms.selectYN('parent','no',this)">No</button></div></div>
+          </details>
+          <details class="inc-details-section">
+            <summary class="inc-section-label" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <span>👀 Witnesses <span style="font-size:11px;color:var(--ink-ghost);font-weight:400">(optional)</span></span>
+              <span class="inc-details-toggle">▾</span>
+            </summary>
+            <div class="form-gap"><label class="field-label">Were there witnesses?</label><div class="yn-row" id="inc-witness-btns"><button class="yn-btn yes" onclick="Forms.selectYN('witness','yes',this);$('witness-names-wrap').style.display='block'">Yes</button><button class="yn-btn no" onclick="Forms.selectYN('witness','no',this);$('witness-names-wrap').style.display='none'">No</button></div></div>
+            <div id="witness-names-wrap" style="display:none" class="form-gap"><label class="field-label">Witness names <span class="field-opt">(optional)</span></label><input type="text" class="input" id="inc-witness-names" placeholder="e.g. Jane Smith, Tom Lee" maxlength="200"></div>
+          </details>
+          <div class="info-banner" style="margin-bottom:14px">👤 <strong>Transparency notice:</strong> Your name and email will be visible to management. Incident reports are not anonymous.</div>
+          <button class="btn btn-primary btn-lg" id="incident-submit" style="width:100%" onclick="Forms.submitIncident()" disabled>Submit Incident Report →</button>
+        </div>
+        <div id="incident-success" class="success-state" style="display:none">
+          <div class="success-icon">📋</div>
+          <h2 style="font-size:22px;font-family:'Fraunces',serif;margin-bottom:8px">Incident Reported</h2>
+          <p style="font-size:14px;color:var(--ink-soft);max-width:300px;margin:0 auto 20px">Your report has been securely recorded and will be reviewed by management.</p>
+          <div class="success-pill">Reference: <strong id="inc-ref-id"></strong></div><br>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px">
+            <button class="btn btn-secondary" onclick="Forms.resetIncident()">＋ New Report</button>
+            <button class="btn btn-secondary" onclick="UI.showIncidentView('history')">View My Reports →</button>
+          </div>
+        </div>
+      </div>
+      <div id="incident-history-view" style="display:none"><div id="inc-history-list"></div></div>
+    </div>
+  </div><!-- end edu-content -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="UI.switchTab('home')"><span style="font-size:19px">🏠</span><span class="nav-label">Home</span><div class="nav-indicator"></div></button>
+    <button class="nav-btn" id="nav-checkin" onclick="UI.switchTab('checkin')"><span style="font-size:19px">💚</span><span class="nav-label">Check-in</span><div class="nav-indicator"></div></button>
+    <button class="nav-btn" id="nav-concern" onclick="UI.switchTab('concern')"><span style="font-size:19px">🔔</span><span class="nav-label">Concern</span><div class="nav-indicator"></div></button>
+    <button class="nav-btn" id="nav-incident" onclick="UI.switchTab('incident')"><span style="font-size:19px">⚠️</span><span class="nav-label">Incident</span><div class="nav-indicator"></div></button>
+    <button class="nav-btn" onclick="App.signOut()"><span style="font-size:19px">🚪</span><span class="nav-label">Exit</span><div class="nav-indicator"></div></button>
+  </nav>
+</div>
+
+<!-- ════════════════ MANAGER ════════════════ -->
+<div id="screen-manager" class="screen">
+  <div class="mgr-header">
+    <div class="mgr-header-top">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="mgr-logo">🌿</div>
+        <span style="font-family:'Fraunces',serif;font-size:17px;font-weight:400">WellSpace</span>
+        <span class="badge" style="background:rgba(154,208,194,.3);color:#9AD0C2;font-size:11px">Manager</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="mgr-refreshed" style="font-size:11px;color:rgba(255,255,255,.5)"></span>
+        <button class="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+        <button class="signout-btn" onclick="App.signOut()">Sign out</button>
+      </div>
+    </div>
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="mgr-nav-overview"  onclick="Mgr.switchTab('overview')">📊 Overview</button>
+      <button class="mgr-tab"        id="mgr-nav-checkins"  onclick="Mgr.switchTab('checkins')">💚 Check-ins</button>
+      <button class="mgr-tab"        id="mgr-nav-concerns"  onclick="Mgr.switchTab('concerns')">🔔 Concerns</button>
+      <button class="mgr-tab"        id="mgr-nav-incidents" onclick="Mgr.switchTab('incidents')">⚠️ Incidents</button>
+    </div>
+  </div>
+  <div class="mgr-content" id="mgr-scroll-container">
+    <div id="mgr-tab-overview" class="tab-content active">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2 style="font-size:20px;font-family:'Fraunces',serif;font-weight:400;margin:0">Analytics Overview</h2>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:4px">
+            <button class="filter-chip active" id="mgr-period-week"   onclick="Mgr.setPeriod('week',this)">7 days</button>
+            <button class="filter-chip"        id="mgr-period-month"  onclick="Mgr.setPeriod('month',this)">30 days</button>
+            <button class="filter-chip"        id="mgr-period-year"   onclick="Mgr.setPeriod('year',this)">12 months</button>
+            <button class="filter-chip"        id="mgr-period-all"    onclick="Mgr.setPeriod('all',this)">All time</button>
+          </div>
+          <button class="refresh-btn" id="refresh-btn" onclick="Mgr.refresh()">↻ Refresh</button>
+        </div>
+      </div>
+      <div id="mgr-period-label" style="font-size:12px;color:var(--ink-ghost);margin-bottom:14px"></div>
+      <div class="stat-grid" id="stat-cards"></div>
+      <div class="chart-card"><div class="chart-title">Stress &amp; Mood Trend (last 10 check-ins)</div><div id="trend-empty" class="chart-empty" style="display:none">📈 No check-in data yet</div><div id="trend-chart-wrap" class="chart-wrap" style="display:none"><canvas id="trend-chart"></canvas></div></div>
+      <div class="chart-row"><div class="chart-card chart-half"><div class="chart-title">Concerns by Category</div><div id="concern-chart-empty" class="chart-empty" style="display:none">No concerns yet</div><div id="concern-chart-wrap" class="chart-wrap" style="height:140px;display:none"><canvas id="concern-chart"></canvas></div></div><div class="chart-card chart-half"><div class="chart-title">Mood Distribution</div><div id="mood-chart-empty" class="chart-empty" style="display:none">No check-ins yet</div><div id="mood-chart-wrap" class="chart-wrap" style="height:140px;display:none"><canvas id="mood-chart"></canvas></div></div></div>
+    </div>
+    <div id="mgr-tab-checkins" class="tab-content">
+      <h2 style="font-size:18px;font-family:'Fraunces',serif;font-weight:400;margin-bottom:4px">Check-in Records</h2>
+      <p class="mgr-section-sub">All data is anonymised. Individual identities are never stored.</p>
+      <div id="checkins-page-note" style="font-size:12px;color:var(--ink-ghost);margin-bottom:12px"></div>
+      <div id="checkins-list"></div>
+      <div id="checkins-load-more" style="display:none;text-align:center;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="Mgr.loadMoreCheckins()">Load more check-ins</button>
+      </div>
+    </div>
+    <div id="mgr-tab-concerns" class="tab-content">
+      <h2 style="font-size:18px;font-family:'Fraunces',serif;font-weight:400;margin-bottom:4px">Anonymous Concerns</h2>
+      <p class="mgr-section-sub">Reports shown without any identifying information.</p>
+      <div id="concerns-page-note" style="font-size:12px;color:var(--ink-ghost);margin-bottom:12px"></div>
+      <div id="concerns-list"></div>
+      <div id="concerns-load-more" style="display:none;text-align:center;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="Mgr.loadMoreConcerns()">Load more concerns</button>
+      </div>
+    </div>
+    <div id="mgr-tab-incidents" class="tab-content">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <h2 style="font-size:18px;font-family:'Fraunces',serif;font-weight:400;margin-bottom:2px">Incident Reports</h2>
+          <p class="mgr-section-sub" style="margin-bottom:0">Reporter name and all details shown. Not anonymous.</p>
+        </div>
+        <button class="export-btn" onclick="Mgr.exportIncidents()">&#11015; Export CSV</button>
+      </div>
+      <div class="inc-stat-strip" id="inc-stat-strip"></div>
+      <div class="inc-filter-bar" id="inc-filter-bar">
+        <span style="font-size:12px;font-weight:600;color:var(--ink-soft)">Status:</span>
+        <button class="filter-chip active" data-ftype="status" data-fval="Open"     onclick="Mgr.setFilter('status','Open',this)">Open</button>
+        <button class="filter-chip"        data-ftype="status" data-fval="Reviewed" onclick="Mgr.setFilter('status','Reviewed',this)">Reviewed</button>
+        <button class="filter-chip"        data-ftype="status" data-fval="Resolved" onclick="Mgr.setFilter('status','Resolved',this)">Resolved</button>
+        <button class="filter-chip"        data-ftype="status" data-fval="all"      onclick="Mgr.setFilter('status','all',this)">All</button>
+        <span style="font-size:12px;font-weight:600;color:var(--ink-soft);margin-left:4px">Sev:</span>
+        <button class="filter-chip active" data-ftype="sev" data-fval="all" onclick="Mgr.setFilter('sev','all',this)">All</button>
+        <button class="filter-chip crit" data-ftype="sev" data-fval="Critical" onclick="Mgr.setFilter('sev','Critical',this)">Critical</button>
+        <button class="filter-chip high" data-ftype="sev" data-fval="High"     onclick="Mgr.setFilter('sev','High',this)">High</button>
+        <select class="sort-select" id="inc-sort" onchange="Mgr.renderIncidentsList()">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="severity">Severity (Critical first)</option>
+        </select>
+      </div>
+      <div id="incidents-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Incident Detail Overlay (manager) ── -->
+<div id="inc-detail-overlay" class="inc-detail-overlay" style="display:none" onclick="Mgr.closeDetail(event)">
+  <div class="inc-detail-panel" id="inc-detail-panel">
+    <!-- Header -->
+    <div class="inc-detail-header">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px" id="inc-detail-badges"></div>
+        <div id="inc-detail-meta" style="font-size:12px;color:var(--ink-ghost)"></div>
+      </div>
+      <button class="inc-close-btn" onclick="Mgr.closeDetail(null)">✕</button>
+    </div>
+    <!-- Scrollable body -->
+    <div class="inc-detail-body" id="inc-detail-body"></div>
+    <!-- Footer: status + new note -->
+    <div class="inc-detail-footer">
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div style="flex:1">
+          <label style="font-size:12px;font-weight:600;color:var(--ink-mid);display:block;margin-bottom:6px">📝 Add a note</label>
+          <textarea class="mgr-notes-area" id="inc-detail-note-input" placeholder="Add resolution notes, actions taken, follow-up required…" style="min-height:64px;margin-bottom:0"></textarea>
+        </div>
+        <button onclick="Mgr.submitDetailNote()" class="btn btn-primary btn-sm" style="flex-shrink:0;margin-bottom:0;white-space:nowrap">Post note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Password visibility toggle ─────────────────────────────
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+    btn.setAttribute('aria-label', 'Hide password');
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+    btn.setAttribute('aria-label', 'Show password');
+  }
+}
+// ════════════════════════════════════════════════════════════════════
+//  WELLSPACE v3 — Refactored per improvement plan
+//  Block 1: Central AppState + modularised functions
+//  Block 2: Tightened Supabase queries (educator-scoped)
+//  Block 3: Security hardening (input sanitisation, role enforcement)
+//  Block 4: Performance (lazy load, skeleton, chart caching, pagination)
+//  Block 5: PWA + offline queue (IndexedDB sync)
+// ════════════════════════════════════════════════════════════════════
+
+// ── Utility: DOM shorthand ────────────────────────────────────────
+function $(id){return document.getElementById(id);}
+
+// ── Supabase ──────────────────────────────────────────────────────
+const SUPABASE_URL='https://vxiqrzwjhkgchqrlxydk.supabase.co';
+const SUPABASE_KEY='sb_publishable_gihRNMxAPmzYT6lak1DCsg_vij37qn4';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// ── Central AppState (Block 1) ────────────────────────────────────
+const AppState={
+  user:null,
+  profile:null,
+  checkins:[],
+  concerns:[],
+  incidents:[],
+  activeTab:'home',
+  overviewOpen:false,
+  overviewPeriod:'week',
+  notifDismissed:{morning:false,afternoon:false},
+  windowTicker:null,
+  formDirty:false,
+  chartsRendered:{trend:false,concern:false,mood:false},
+  lastDataFetch:null,
+  lastConcernSubmit:null  // timestamp of last anonymous concern in this session
+};
+
+// ── Constants ─────────────────────────────────────────────────────
+const MOODS=[
+  {emoji:'😄',label:'Great',val:5,color:'#3A8B5A'},
+  {emoji:'🙂',label:'Good',val:4,color:'#7A9E3A'},
+  {emoji:'😐',label:'Okay',val:3,color:'#C4A030'},
+  {emoji:'😔',label:'Low',val:2,color:'#C47A30'},
+  {emoji:'😞',label:'Struggling',val:1,color:'#C44040'}
+];
+const WIN={
+  morning:  {label:'Morning',  startH:7, startM:0, endH:9, endM:30},
+  afternoon:{label:'Afternoon',startH:14,startM:0, endH:16,endM:0}
+};
+const VALID_CATS=['Workload','Safety','Management','Workplace Culture','Other'];
+const VALID_INC_CATS=['Near Miss','Injury','Property Damage','Child Safety','Illness','Other'];
+const VALID_SEV=['Low','Medium','High','Critical'];
+const VALID_INVOLVED=['Child','Educator','Visitor','Multiple People','Other'];
+const PAGE_SIZE=50;
+
+// ── Utility helpers ───────────────────────────────────────────────
+const Util={
+  sanitise(str){
+    if(typeof str!=='string')return '';
+    return str.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim().slice(0,2000);
+  },
+  genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2);},
+  fmtDate(iso){return new Date(iso).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});},
+  fmtTime(iso){return new Date(iso).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});},
+  fmtMins(m){if(m<=0)return 'now';const h=Math.floor(m/60),r=m%60;return h>0&&r>0?h+'h '+r+'m':h>0?h+'h':r+'m';},
+  fmtWinTime(h,m){const d=new Date();d.setHours(h,m,0,0);return d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true});},
+  updateCharCount(fieldId,countId){const v=$(fieldId)?.value||'';const el=$(countId);if(el)el.textContent=v.length;},
+  validateMood(v){return Number.isInteger(v)&&v>=1&&v<=5;},
+  validateStress(v){return Number.isInteger(v)&&v>=1&&v<=5;},
+  validateEnum(v,arr){return arr.includes(v);},
+  avg(arr){return arr.length?Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10:null;}
+};
+
+// ── Toast queue (Block 1) ─────────────────────────────────────────
+const Toast={
+  queue:[],
+  show(msg,type='default'){
+    const el=document.createElement('div');
+    el.className='toast-item'+(type==='error'?' error':type==='success'?' success':'');
+    el.textContent=msg;
+    $('toast-container').appendChild(el);
+    requestAnimationFrame(()=>{requestAnimationFrame(()=>el.classList.add('show'));});
+    setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300);},3500);
+  },
+  error(msg){this.show(msg,'error');},
+  success(msg){this.show(msg,'success');}
+};
+
+// ── Offline / PWA (Block 5) ───────────────────────────────────────
+const OfflineQueue={
+  DB_NAME:'wellspace_queue',DB_VER:1,STORE:'pending',
+  async getDB(){
+    return new Promise((res,rej)=>{
+      const req=indexedDB.open(this.DB_NAME,this.DB_VER);
+      req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(this.STORE))db.createObjectStore(this.STORE,{keyPath:'id'});};
+      req.onsuccess=e=>res(e.target.result);
+      req.onerror=e=>rej(e.target.error);
+    });
+  },
+  async enqueue(table,record){
+    try{const db=await this.getDB();const tx=db.transaction(this.STORE,'readwrite');tx.objectStore(this.STORE).add({id:Util.genId(),table,record,ts:Date.now()});}
+    catch(e){console.warn('Offline queue error',e);}
+  },
+  async flush(){
+    if(!navigator.onLine)return;
+    try{
+      const db=await this.getDB();
+      const tx=db.transaction(this.STORE,'readwrite');
+      const store=tx.objectStore(this.STORE);
+      const all=await new Promise(res=>{const r=store.getAll();r.onsuccess=e=>res(e.target.result);});
+      for(const item of all){
+        const{error}=await window.db.from(item.table).insert(item.record);
+        if(!error){store.delete(item.id);}
+      }
+      if(all.length>0)Toast.success(`Synced ${all.length} offline submission${all.length>1?'s':''}`);
+    }catch(e){console.warn('Flush error',e);}
+  }
+};
+window.addEventListener('online',()=>{$('offline-banner').style.display='none';OfflineQueue.flush();});
+window.addEventListener('offline',()=>{$('offline-banner').style.display='block';});
+
+// Close incident detail panel on Escape key (top-level, always registered)
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('inc-detail-overlay')?.style.display==='flex'){
+    Mgr.closeDetail(null);
+  }
+});
+if(!navigator.onLine)$('offline-banner').style.display='block';
+
+// ── Supabase helpers ──────────────────────────────────────────────
+async function saveRecord(table,record){
+  if(!navigator.onLine){await OfflineQueue.enqueue(table,record);Toast.show('Saved offline — will sync when connected');return true;}
+  try{const{error}=await db.from(table).insert(record);if(error)throw error;return true;}
+  catch(e){Toast.error('Could not save — check your connection');return false;}
+}
+
+// ── Window state ──────────────────────────────────────────────────
+const WinUtil={
+  getCurrentWindow(){
+    const now=new Date();const mins=now.getHours()*60+now.getMinutes();
+    for(const[k,w] of Object.entries(WIN)){const s=w.startH*60+w.startM,e=w.endH*60+w.endM;if(mins>=s&&mins<e)return k;}
+    return null;
+  },
+  isWindowOpen(){return this.getCurrentWindow()!==null;},
+  getWindowRemainingTime(){
+    const cur=this.getCurrentWindow();if(!cur)return null;
+    const now=new Date();const mins=now.getHours()*60+now.getMinutes();
+    const w=WIN[cur];return(w.endH*60+w.endM)-mins;
+  },
+  getState(){
+    const now=new Date();const mins=now.getHours()*60+now.getMinutes();
+    const today=now.toLocaleDateString('en-CA');
+    const my=AppState.checkins;
+    const todayCI=my.filter(c=>new Date(c.timestamp).toLocaleDateString('en-CA')===today);
+    const wm={};
+    for(const[k,w] of Object.entries(WIN))wm[k]={start:w.startH*60+w.startM,end:w.endH*60+w.endM};
+    const mDone=todayCI.some(c=>c.session_window==='morning');
+    const aDone=todayCI.some(c=>c.session_window==='afternoon');
+    const inM=mins>=wm.morning.start&&mins<wm.morning.end;
+    const inA=mins>=wm.afternoon.start&&mins<wm.afternoon.end;
+    const pastM=mins>=wm.morning.end,pastA=mins>=wm.afternoon.end;
+    const curWin=(inM&&!mDone)?'morning':(inA&&!aDone)?'afternoon':null;
+    let nextWin=null;
+    if(!mDone&&!inM&&!pastM)nextWin={key:'morning',...WIN.morning,startMins:wm.morning.start};
+    else if(!aDone&&!inA&&!pastA)nextWin={key:'afternoon',...WIN.afternoon,startMins:wm.afternoon.start};
+    return{mDone,aDone,inM,inA,pastM,pastA,mMissed:pastM&&!mDone,aMissed:pastA&&!aDone,
+      curWin,nextWin,canCheckIn:curWin!==null,bothDone:mDone&&aDone,
+      minsToClose:curWin?(wm[curWin].end-mins):null,
+      minsToOpen:nextWin?(nextWin.startMins-mins):null};
+  }
+};
+
+// ── Auth module (Block 1 & 3) ─────────────────────────────────────
+const App={
+  async _doLogin(emailId,pwId,errId,roleErrId,btnId,expectedRole,onSuccess){
+    const email=$(emailId).value.trim();
+    const pw=$(pwId).value;
+    const errEl=$(errId),roleEl=$(roleErrId),btn=$(btnId);
+    errEl.style.display=roleEl.style.display='none';
+    // Front-end validation
+    if(!email||!pw){Toast.error('Please enter your email and password.');return;}
+    if(!email.includes('@')){Toast.error('Please enter a valid email address.');return;}
+    btn.disabled=true;btn.textContent='Signing in…';
+    try{
+      const{data,error}=await db.auth.signInWithPassword({email,password:pw});
+      if(error)throw error;
+      // Fetch role from profiles
+      const{data:prof,error:profErr}=await db.from('profiles').select('role').eq('id',data.user.id).single();
+      if(profErr||!prof){await db.auth.signOut();roleEl.style.display='block';return;}
+      if(prof.role!==expectedRole){await db.auth.signOut();roleEl.style.display='block';return;}
+      AppState.user=data.user;AppState.profile=prof;
+      onSuccess();
+    }catch(e){
+      errEl.style.display='block';
+    }finally{btn.disabled=false;btn.textContent='Sign in →';}
+  },
+  async loginEducator(){
+    await this._doLogin('edu-email','edu-password','edu-error','edu-role-error','edu-login-btn','educator',()=>{hideEducatorModal();goEducator();});
+  },
+  async loginManager(){
+    await this._doLogin('mgr-email','mgr-password','pin-error','pin-role-error','login-btn','manager',()=>{hidePinModal();goManager();});
+  },
+  async signOut(){
+    if(AppState.windowTicker){clearInterval(AppState.windowTicker);AppState.windowTicker=null;}
+    await db.auth.signOut();
+    AppState.user=null;AppState.profile=null;AppState.checkins=[];AppState.concerns=[];AppState.incidents=[];
+    AppState.chartsRendered={trend:false,concern:false,mood:false};
+    hidePinModal();hideEducatorModal();
+    showScreen('landing');
+  }
+};
+
+// ── Screen navigation ─────────────────────────────────────────────
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('screen-'+id).classList.add('active');}
+function showPinModal(){$('landing-main').style.display='none';$('pin-modal').classList.add('visible');$('mgr-email').focus();}
+function hidePinModal(){$('landing-main').style.display='flex';$('pin-modal').classList.remove('visible');$('mgr-email').value='';$('mgr-password').value='';$('pin-error').style.display=$('pin-role-error').style.display='none';}
+function showEducatorModal(){$('landing-main').style.display='none';$('edu-modal').classList.add('visible');$('edu-email').focus();}
+function hideEducatorModal(){$('landing-main').style.display='flex';$('edu-modal').classList.remove('visible');$('edu-email').value='';$('edu-password').value='';$('edu-error').style.display=$('edu-role-error').style.display='none';}
+
+// ── Educator: load & setup ────────────────────────────────────────
+async function goEducator(){
+  showScreen('educator');
+  $('data-loader').style.display='block';
+  try{
+    const[ciRes,incRes]=await Promise.all([
+      db.from('checkins').select('*').eq('user_id',AppState.user.id).order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1),
+      db.from('incidents').select('*').eq('user_id',AppState.user.id).order('timestamp',{ascending:true})
+    ]);
+    if(ciRes.error)throw ciRes.error;
+    AppState.checkins=ciRes.data||[];
+    AppState.incidents=incRes.data||[];
+    if(AppState.incidents.length){
+      const incIds=AppState.incidents.map(i=>i.id);
+      const{data:notesData}=await db.from('incident_notes').select('*').in('incident_id',incIds).order('created_at',{ascending:true});
+      const noteMap={};
+      (notesData||[]).forEach(n=>{if(!noteMap[n.incident_id])noteMap[n.incident_id]=[];noteMap[n.incident_id].push(n);});
+      AppState.incidentNotesForEducator=noteMap;
+    }else{AppState.incidentNotesForEducator={};}
+  }catch(e){Toast.error('Could not load your data');}
+  $('data-loader').style.display='none';
+  setupEducator();
+}
+
+function setupEducator(){
+  const h=new Date().getHours();
+  $('edu-name-badge').textContent=AppState.user?.email?.split('@')[0]||'';
+  $('greeting-date').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  $('greeting-text').textContent=h<12?'Good morning 👋':h<17?'Good afternoon 👋':'Good evening 👋';
+  AppState.notifDismissed={morning:false,afternoon:false};
+  UI.updateCheckinCard();UI.checkWinNotif();
+  CI.buildMoodBtns();CI.buildStressBtns();CI.buildLifestyleOptions();
+  // Set today's date on incident form
+  const today=new Date().toISOString().split('T')[0];
+  const incDate=$('inc-date');if(incDate){incDate.value=today;incDate.max=today;}
+  const incTime=$('inc-time');if(incTime){const n=new Date();incTime.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+  CI.state={step:0,mood:null,stress:3,sleep:null,energy:null,eating:null};
+  CI.renderStep(0);CI.updateStepBar();
+  if(AppState.windowTicker)clearInterval(AppState.windowTicker);
+  AppState.windowTicker=setInterval(()=>{UI.updateCheckinCard();UI.checkWinNotif();if($('tab-checkin')?.classList.contains('active'))UI.updateCheckinTabState();},60000);
+  // Scroll to top button
+  const cont=$('edu-scroll-container');
+  if(cont)cont.addEventListener('scroll',()=>{$('scroll-top').classList.toggle('visible',cont.scrollTop>300);});
+}
+
+function scrollToTop(){
+  const c=$('edu-scroll-container')||$('mgr-scroll-container');
+  if(c)c.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Manager: load & setup ─────────────────────────────────────────
+async function goManager(){
+  showScreen('manager');
+  $('stat-cards').innerHTML='<div class="skel-card skeleton" style="flex:1"></div><div class="skel-card skeleton" style="flex:1"></div><div class="skel-card skeleton" style="flex:1"></div><div class="skel-card skeleton" style="flex:1"></div>';
+  // Block 4: Use server-side RPC for aggregated stats where possible;
+  // load paginated data for lists
+  try{
+    const[ch,co,inc]=await Promise.all([
+      db.from('checkins').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1),
+      db.from('concerns').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1),
+      db.from('incidents').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1)
+    ]);
+    AppState.checkins=ch.data||[];AppState.concerns=co.data||[];AppState.incidents=inc.data||[];
+    AppState.lastDataFetch=Date.now();
+  }catch(e){Toast.error('Could not load dashboard data');}
+  Mgr.renderStats();Mgr.renderCheckinsList();Mgr.renderConcernsList();Mgr.renderIncidentsList();
+  ['overview','checkins','concerns','incidents'].forEach(t=>{$('mgr-tab-'+t).classList.toggle('active',t==='overview');$('mgr-nav-'+t).classList.toggle('active',t==='overview');});
+  Mgr.renderCharts();
+  // Initialise period label for default 'week' selection
+  Mgr.setPeriod('week',$('mgr-period-week'));
+  const ts=$('mgr-refreshed');if(ts)ts.textContent='Refreshed '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  const cont=$('mgr-scroll-container');
+  if(cont)cont.addEventListener('scroll',()=>{$('scroll-top').classList.toggle('visible',cont.scrollTop>300);});
+}
+
+// ── UI module ─────────────────────────────────────────────────────
+const UI={
+  updateCheckinCard(){
+    const ws=WinUtil.getState();
+    const el=$('last-checkin-card');const stripEl=$('window-strip');
+    const last=AppState.checkins.length?AppState.checkins[AppState.checkins.length-1]:null;
+    const lm=last?(MOODS.find(x=>x.val===last.mood)||MOODS[2]):null;
+    const ovBtn=`<button onclick="UI.toggleOverview()" style="background:var(--sage-pale);border:1.5px solid var(--sage-light);color:var(--sage);border-radius:50px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0" onmouseover="this.style.background='var(--sage)';this.style.color='#fff'" onmouseout="this.style.background='var(--sage-pale)';this.style.color='var(--sage)'">📊 Overview</button>`;
+    const ciBtn=`<button class="btn btn-primary btn-sm" onclick="UI.switchTab('checkin')" style="flex-shrink:0;animation:pulseBorder 2s ease infinite">💚 Check in</button>`;
+    if(last){const wl=last.session_window?' · '+last.session_window.charAt(0).toUpperCase()+last.session_window.slice(1):'';el.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:30px">${lm.emoji}</span><div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--ink-soft)">Last check-in${wl}</div><div style="font-weight:600;font-size:14px;color:var(--ink)">Feeling ${lm.label} · Stress ${last.stress}/5</div><div style="font-size:11px;color:var(--ink-ghost)">${Util.fmtDate(last.timestamp)}</div></div>${ws.canCheckIn?ciBtn:ovBtn}</div>`;}
+    else{
+      let nextInfo='';
+      if(ws.canCheckIn){nextInfo=`<div style="font-size:12px;color:var(--good);margin-top:4px;font-weight:600">✅ Window is open now — tap Check in</div>`;}
+      else if(ws.nextWin){const w=ws.nextWin;nextInfo=`<div style="font-size:12px;color:var(--ink-soft);margin-top:4px">Next window: <strong>${w.label}</strong> at <strong>${Util.fmtWinTime(w.startH,w.startM)}</strong> (in ${Util.fmtMins(ws.minsToOpen)})</div>`;}
+      else{nextInfo=`<div style="font-size:12px;color:var(--ink-ghost);margin-top:4px">Windows open tomorrow from ${Util.fmtWinTime(WIN.morning.startH,WIN.morning.startM)}</div>`;}
+      el.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:30px">💚</span><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--ink)">No check-ins yet</div>${nextInfo}</div>${ws.canCheckIn?ciBtn:''}</div>`;
+    }
+    let stripClass='strip-wait',stripContent='';
+    if(ws.bothDone){stripClass='strip-done';stripContent='<span>✅</span><span>Both check-ins complete for today!</span>';}
+    else if(ws.curWin){const w=WIN[ws.curWin];stripClass='strip-open';stripContent=`<span class="pulse-dot"></span><span>${w.label} window open · closes in ${Util.fmtMins(ws.minsToClose)}</span>`;}
+    else if(ws.nextWin){const w=ws.nextWin;stripClass='strip-wait';stripContent=`<span>🕐</span><span>Next: ${w.label} at ${Util.fmtWinTime(w.startH,w.startM)} (in ${Util.fmtMins(ws.minsToOpen)})</span>`;}
+    else if(ws.mMissed&&ws.aMissed){stripClass='strip-missed';stripContent='<span>⚠️</span><span>Both windows missed today</span>';}
+    else if(ws.mMissed){stripClass='strip-missed';stripContent='<span>⚠️</span><span>Morning window missed · afternoon still available</span>';}
+    if(stripContent){stripEl.style.display='flex';stripEl.className='window-strip '+stripClass;stripEl.innerHTML=stripContent;}
+    else stripEl.style.display='none';
+  },
+  checkWinNotif(){
+    const ws=WinUtil.getState();const banner=$('win-notif');const msgEl=$('win-notif-msg');
+    if(!banner)return;
+    let show=false,msg='';
+    if(ws.inM&&!ws.mDone&&ws.minsToClose<=60&&!AppState.notifDismissed.morning){show=true;msg='Morning check-in closes in '+Util.fmtMins(ws.minsToClose)+' — tap to check in!';AppState.notifDismissed._key='morning';}
+    else if(ws.inA&&!ws.aDone&&ws.minsToClose<=60&&!AppState.notifDismissed.afternoon){show=true;msg='Afternoon check-in closes in '+Util.fmtMins(ws.minsToClose)+' — tap to check in!';AppState.notifDismissed._key='afternoon';}
+    banner.style.display=show?'flex':'none';if(show)msgEl.textContent=msg;
+  },
+  dismissWinNotif(){if(AppState.notifDismissed._key)AppState.notifDismissed[AppState.notifDismissed._key]=true;$('win-notif').style.display='none';},
+  updateCheckinTabState(){
+    const ws=WinUtil.getState();const lockEl=$('checkin-locked');const formEl=$('checkin-form');const succEl=$('checkin-success');
+    if(!lockEl||!formEl||succEl?.style.display==='block')return;
+    if(!ws.canCheckIn){
+      lockEl.style.display='block';formEl.style.display='none';
+      if(ws.bothDone){$('cl-icon').textContent='✅';$('cl-title').textContent='All done for today!';$('cl-sub').textContent='Both check-ins complete. See you tomorrow!';}
+      else if(ws.nextWin){const w=ws.nextWin;$('cl-icon').textContent='🕐';$('cl-title').textContent=w.label+' window opens soon';$('cl-sub').innerHTML='Opens at <strong>'+Util.fmtWinTime(w.startH,w.startM)+'</strong> and closes at <strong>'+Util.fmtWinTime(w.endH,w.endM)+'</strong> · in '+Util.fmtMins(ws.minsToOpen)+'<br><span style="color:var(--sage);font-size:12px">🕗 Morning 7:00–9:30 AM &nbsp;·&nbsp; 🕑 Afternoon 2:00–4:00 PM</span><br><span style="color:var(--ink-ghost);font-size:11px;margin-top:4px;display:block">Windows are configured by your centre administrator</span>';}
+      else{$('cl-icon').textContent='😴';$('cl-title').textContent='Check-in windows closed for today';$('cl-sub').innerHTML='Come back tomorrow when the morning window opens at <strong>'+Util.fmtWinTime(WIN.morning.startH,WIN.morning.startM)+'</strong><br><span style="color:var(--sage);font-size:12px">🕗 Morning 7:00–9:30 AM &nbsp;·&nbsp; 🕑 Afternoon 2:00–4:00 PM</span><br><span style="color:var(--ink-ghost);font-size:11px;margin-top:4px;display:block">Windows are configured by your centre administrator</span>';}
+    }else{lockEl.style.display='none';formEl.style.display='block';}
+  },
+  switchTab(tab){
+    ['home','checkin','concern','incident'].forEach(t=>{$('tab-'+t).classList.toggle('active',t===tab);const n=$('nav-'+t);if(n)n.classList.toggle('active',t===tab);});
+    AppState.activeTab=tab;
+    if(tab==='checkin')this.updateCheckinTabState();
+    if(tab==='incident'){Forms.resetIncident();this.showIncidentView('new');}
+    if(tab==='home')this.updateConcernSessionNote();
+  },
+  showIncidentView(view){
+    $('incident-new-view').style.display=view==='new'?'block':'none';
+    $('incident-history-view').style.display=view==='history'?'block':'none';
+    $('inc-tog-new').classList.toggle('active',view==='new');$('inc-tog-hist').classList.toggle('active',view==='history');
+    if(view==='history')this.renderMyIncidents();
+  },
+  renderMyIncidents(){
+    const my=AppState.incidents.filter(i=>i.user_id===AppState.user?.id);
+    const el=$('inc-history-list');
+    if(!my.length){el.innerHTML='<div class="card" style="text-align:center;padding:32px;color:var(--ink-soft)"><div style="font-size:36px;margin-bottom:8px">\u{1F4CB}</div>No incident reports yet.</div>';return;}
+    const sevColors={Low:'var(--good)',Medium:'var(--warn)',High:'var(--danger)',Critical:'#7A1A1A'};
+    const sevBorder={Critical:'inc-card-critical',High:'inc-card-high',Medium:'inc-card-medium',Low:'inc-card-low'};
+    const legend=`<div class="status-legend"><strong style="color:var(--ink-mid);margin-right:4px">Status guide:</strong><span><span class="inc-status open" style="font-size:10px">Open</span> Awaiting review</span><span><span class="inc-status reviewed" style="font-size:10px">Reviewed</span> Management has seen this</span><span><span class="inc-status resolved" style="font-size:10px">Resolved</span> Action taken</span></div>`;
+    const cards=[...my].reverse().map(i=>{
+      const st=i.status||'Open';const stCls=st==='Open'?'open':st==='Reviewed'?'reviewed':'resolved';
+      const borderCls=sevBorder[i.severity]||'';
+      // Show threaded notes from the new incident_notes table if available in AppState
+      // (loaded when educator views their history via renderMyIncidentsNotes)
+      const noteThread=(AppState.incidentNotesForEducator||{})[i.id];
+      const managerNote=noteThread&&noteThread.length
+        ? `<div style="margin-top:8px"><div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Manager Notes</div>${noteThread.map(n=>`<div class="edu-mgr-note" style="margin-bottom:6px"><div style="font-size:10px;color:var(--ink-ghost);margin-bottom:3px">${new Date(n.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>${Util.sanitise(n.note)}</div>`).join('')}</div>`
+        : '';
+      const resolvedAt=i.resolved_at?`<span>\u2705 Resolved ${Util.fmtDate(i.resolved_at)}</span>`:'';
+      const reviewedAt=i.reviewed_at?`<span>\u2714 Reviewed ${Util.fmtDate(i.reviewed_at)}</span>`:'';
+      const auditRow=(reviewedAt||resolvedAt)?`<div class="audit-row">${reviewedAt}${resolvedAt}</div>`:'';
+      return`<div class="card ${borderCls}" style="margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:6px"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge" style="background:${sevColors[i.severity]||'#888'}18;color:${sevColors[i.severity]||'#888'}">${Util.sanitise(i.severity||'')}</span><span class="badge" style="background:var(--sage-pale);color:var(--sage)">${Util.sanitise(i.category||'')}</span><span class="inc-status ${stCls}">${st}</span></div><span style="font-size:11px;color:var(--ink-ghost)">Ref: ${i.id?i.id.slice(-6).toUpperCase():''}</span></div><div style="font-size:12px;color:var(--ink-ghost);margin-bottom:6px">${Util.sanitise(i.date||'')} ${i.incident_time?'\u00b7 '+i.incident_time:''} ${i.location?'\u00b7 '+Util.sanitise(i.location):''}</div><p style="margin:0;font-size:13px;line-height:1.55;color:var(--ink)">${Util.sanitise(i.description)}</p>${managerNote}${auditRow}<div style="font-size:11px;color:var(--ink-ghost);margin-top:6px">Submitted: ${Util.fmtDate(i.timestamp)}</div></div>`;
+    }).join('');
+    el.innerHTML=legend+cards;
+  },
+  toggleOverview(){
+    AppState.overviewOpen=!AppState.overviewOpen;
+    $('overview-panel').classList.toggle('open',AppState.overviewOpen);
+    if(AppState.overviewOpen){AppState.overviewPeriod='week';['week','month','year'].forEach(p=>$('period-'+p).classList.toggle('active',p==='week'));Overview.render();setTimeout(()=>$('overview-panel').scrollIntoView({behavior:'smooth',block:'nearest'}),80);}
+  },
+  updateConcernSessionNote(){
+    const el=$('concern-session-note');const txt=$('concern-session-text');
+    if(!el||!txt)return;
+    if(!AppState.lastConcernSubmit){el.style.display='none';return;}
+    const mins=Math.round((Date.now()-new Date(AppState.lastConcernSubmit).getTime())/60000);
+    const timeStr=mins<1?'just now':mins===1?'1 minute ago':mins<60?mins+' minutes ago':Util.fmtTime(AppState.lastConcernSubmit);
+    txt.textContent='Anonymous concern submitted '+timeStr+' this session — your identity is protected.';
+    el.style.display='flex';
+  },
+  switchPeriod(p){AppState.overviewPeriod=p;['week','month','year'].forEach(t=>$('period-'+t).classList.toggle('active',t===p));Overview.render();}
+};
+
+// ── Check-in module (CI) ──────────────────────────────────────────
+const CI={
+  state:{step:0,mood:null,stress:3,sleep:null,energy:null,eating:null},
+  buildMoodBtns(){$('mood-btns').innerHTML=MOODS.map(m=>`<button class="mood-btn" id="mood-btn-${m.val}" onclick="CI.selectMood(${m.val},this)"><span style="font-size:26px">${m.emoji}</span><span style="font-size:11px;color:var(--ink-soft);font-weight:500">${m.label}</span></button>`).join('');},
+  selectMood(val,el){this.state.mood=val;document.querySelectorAll('.mood-btn').forEach(b=>{b.style.borderColor='';b.style.background='';});const m=MOODS.find(x=>x.val===val);el.style.borderColor=m.color;el.style.background=m.color+'15';$('ci-next-0').disabled=false;},
+  buildStressBtns(){$('stress-btns').innerHTML=[1,2,3,4,5].map(n=>`<button class="stress-btn" id="s-btn-${n}" onclick="CI.selectStress(${n})">${n}</button>`).join('');this.selectStressByVal(3);},
+  selectStress(n){this.state.stress=n;this.selectStressByVal(n);},
+  selectStressByVal(n){
+    [1,2,3,4,5].forEach(i=>{const b=$('s-btn-'+i);if(!b)return;b.style.background=i===n?'var(--sage)':'';b.style.borderColor=i===n?'var(--sage)':'';b.style.color=i===n?'#fff':'';});
+    const badge=$('stress-badge');
+    if(n<=2){badge.style.background='#E8F5EE';badge.style.color='var(--good)';badge.textContent='Low stress';}
+    else if(n===3){badge.style.background='#FFF5DC';badge.style.color='#8A6000';badge.textContent='Moderate stress';}
+    else{badge.style.background='#FEF0EF';badge.style.color='var(--danger)';badge.textContent='High stress';}
+  },
+  buildLifestyleOptions(){document.querySelectorAll('.lifestyle-group').forEach(g=>{const key=g.dataset.key;const optDiv=g.querySelector('[data-options]');optDiv.innerHTML=optDiv.dataset.options.split(',').map(o=>`<button class="chip" onclick="CI.selectLifestyle('${key}','${Util.sanitise(o)}',this)">${o}</button>`).join('');});},
+  selectLifestyle(key,val,el){el.closest('[data-options]').querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));if(this.state[key]===val){this.state[key]=null;}else{this.state[key]=val;el.classList.add('active');}},
+  updateStepBar(){const steps=['Mood','Stress','Lifestyle'];$('ci-steps').innerHTML=steps.map((s,i)=>{const cls=i<this.state.step?'done':i===this.state.step?'current':'future';const icon=i<this.state.step?'✓':i+1;return`<div class="step-dot ${cls}">${icon}</div>${i<steps.length-1?`<div class="step-line${i<this.state.step?' done':''}"></div>`:''}`;}).join('');},
+  renderStep(s){[0,1,2].forEach(i=>$('ci-step-'+i).style.display=i===s?'block':'none');this.state.step=s;this.updateStepBar();},
+  next(from){this.renderStep(from+1);},
+  back(from){this.renderStep(from-1);},
+  async submit(){
+    // Block 3: Validate before sending
+    if(!Util.validateMood(this.state.mood)){Toast.error('Please select a mood.');return;}
+    if(!Util.validateStress(this.state.stress)){Toast.error('Please select a stress level.');return;}
+    const ws=WinUtil.getState();
+    const entry={id:Util.genId(),timestamp:new Date().toISOString(),mood:this.state.mood,stress:this.state.stress,sleep:this.state.sleep,energy:this.state.energy,eating:this.state.eating,session_window:ws.curWin||null,user_id:AppState.user?.id||null};
+    const ok=await saveRecord('checkins',entry);
+    if(!ok)return;
+    AppState.checkins.push(entry);
+    const winLabel=entry.session_window?(entry.session_window.charAt(0).toUpperCase()+entry.session_window.slice(1))+' check-in recorded!':'Check-in complete!';
+    $('ci-success-title').textContent=winLabel;
+    $('ci-success-sub').textContent='Your response has been saved. See you next check-in window!';
+    $('checkin-form').style.display='none';$('checkin-success').style.display='block';
+    UI.updateCheckinCard();
+  },
+  reset(){this.state={step:0,mood:null,stress:3,sleep:null,energy:null,eating:null};$('checkin-form').style.display='block';$('checkin-success').style.display='none';this.buildMoodBtns();this.buildStressBtns();this.buildLifestyleOptions();$('ci-next-0').disabled=true;this.renderStep(0);}
+};
+
+// ── Forms module ──────────────────────────────────────────────────
+const Forms={
+  _state:{concernCat:'',incidentCat:'',incidentSev:'',incidentInvolved:'',incidentYN:{firstaid:null,emergency:null,parent:null,witness:null}},
+  selectConcernCat(cat,el){
+    if(!Util.validateEnum(cat,VALID_CATS)){Toast.error('Invalid category.');return;}
+    document.querySelectorAll('#concern-cats .chip').forEach(c=>c.classList.remove('active'));
+    this._state.concernCat=cat;el.classList.add('active');$('concern-submit').disabled=false;
+  },
+  async submitConcern(){
+    if(!Util.validateEnum(this._state.concernCat,VALID_CATS)){Toast.error('Please select a category.');return;}
+    const desc=Util.sanitise($('concern-desc').value);
+    const entry={id:Util.genId(),timestamp:new Date().toISOString(),category:this._state.concernCat,description:desc};
+    const ok=await saveRecord('concerns',entry);if(!ok)return;
+    AppState.concerns.push(entry);AppState.formDirty=false;
+    AppState.lastConcernSubmit=new Date().toISOString();
+    $('concern-form').style.display='none';$('concern-success').style.display='block';
+    UI.updateConcernSessionNote();
+  },
+  resetConcern(){this._state.concernCat='';$('concern-form').style.display='block';$('concern-success').style.display='none';document.querySelectorAll('#concern-cats .chip').forEach(c=>c.classList.remove('active'));$('concern-desc').value='';const cc=$('concern-char');if(cc)cc.textContent='0';$('concern-submit').disabled=true;},
+  selectIncidentCat(cat,el){if(!Util.validateEnum(cat,VALID_INC_CATS)){return;}document.querySelectorAll('#incident-cats .chip').forEach(c=>c.classList.remove('active'));this._state.incidentCat=cat;el.classList.add('active');this.checkIncidentValid();this.updateRegFlag();},
+  selectInvolved(val,el){if(!Util.validateEnum(val,VALID_INVOLVED)){return;}document.querySelectorAll('#inc-involved-btns .chip').forEach(c=>c.classList.remove('active'));this._state.incidentInvolved=val;el.classList.add('active');this.checkIncidentValid();},
+  selectSeverity(sev,el){if(!Util.validateEnum(sev,VALID_SEV)){return;}document.querySelectorAll('.sev-btn').forEach(b=>{b.style.borderColor='';b.style.background='';});this._state.incidentSev=sev;const cols={Low:'#3A8B5A',Medium:'#C47A30',High:'#C44040',Critical:'#7A1A1A'};el.style.borderColor=cols[sev];el.style.background=cols[sev]+'18';this.checkIncidentValid();this.updateRegFlag();},
+  selectYN(field,val,el){el.closest('.yn-row').querySelectorAll('.yn-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');this._state.incidentYN[field]=val;},
+  updateRegFlag(){const f=$('reg-flag');if(!f)return;f.style.display=(this._state.incidentCat==='Child Safety'||this._state.incidentSev==='Critical')?'flex':'none';},
+  checkIncidentValid(){
+    const desc=($('inc-desc')?.value||'').trim();
+    const valid=this._state.incidentCat&&this._state.incidentSev&&this._state.incidentInvolved&&$('inc-date')?.value&&$('inc-time')?.value&&$('inc-location')?.value&&desc.length>=5&&desc.length<=2000;
+    const btn=$('incident-submit');if(btn)btn.disabled=!valid;
+  },
+  async submitIncident(){
+    // Block 3: Full validation
+    if(!Util.validateEnum(this._state.incidentCat,VALID_INC_CATS)){Toast.error('Invalid incident category.');return;}
+    if(!Util.validateEnum(this._state.incidentSev,VALID_SEV)){Toast.error('Invalid severity level.');return;}
+    if(!Util.validateEnum(this._state.incidentInvolved,VALID_INVOLVED)){Toast.error('Invalid involvement selection.');return;}
+    const desc=($('inc-desc')?.value||'').trim();
+    if(desc.length<5){Toast.error('Please provide a description of at least 5 characters.');return;}
+    const shortId=Util.genId();
+    const entry={id:shortId,timestamp:new Date().toISOString(),date:$('inc-date').value,incident_time:$('inc-time').value,location:Util.sanitise($('inc-location').value),category:this._state.incidentCat,involved:this._state.incidentInvolved,severity:this._state.incidentSev,description:Util.sanitise(desc),first_aid:this._state.incidentYN.firstaid||'not_specified',emergency:this._state.incidentYN.emergency||'not_specified',parent_notified:this._state.incidentYN.parent||'not_specified',witnesses:this._state.incidentYN.witness||'not_specified',witness_names:Util.sanitise($('inc-witness-names')?.value||''),reporter_email:AppState.user?.email||'',user_id:AppState.user?.id||null,status:'Open'};
+    const ok=await saveRecord('incidents',entry);if(!ok)return;
+    AppState.incidents.push(entry);AppState.formDirty=false;
+    const refEl=$('inc-ref-id');if(refEl)refEl.textContent=shortId.slice(-6).toUpperCase();
+    $('incident-form').style.display='none';$('reg-flag').style.display='none';$('incident-success').style.display='block';
+  },
+  resetIncident(){
+    this._state={concernCat:this._state.concernCat,incidentCat:'',incidentSev:'',incidentInvolved:'',incidentYN:{firstaid:null,emergency:null,parent:null,witness:null}};
+    AppState.formDirty=false;
+    $('incident-form').style.display='block';$('incident-success').style.display='none';$('reg-flag').style.display='none';
+    document.querySelectorAll('#incident-cats .chip').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('#inc-involved-btns .chip').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.sev-btn').forEach(b=>{b.style.borderColor='';b.style.background='';});
+    document.querySelectorAll('.yn-btn').forEach(b=>b.classList.remove('active'));
+    ['inc-desc','inc-witness-names'].forEach(id=>{const el=$(id);if(el)el.value='';});
+    $('witness-names-wrap').style.display='none';
+    ['inc-char'].forEach(id=>{const el=$(id);if(el)el.textContent='0';});
+    $('incident-submit').disabled=true;
+    const today=new Date().toISOString().split('T')[0];const incDate=$('inc-date');if(incDate){incDate.value=today;incDate.max=today;}
+    const incTime=$('inc-time');if(incTime){const n=new Date();incTime.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+    const locEl=$('inc-location');if(locEl)locEl.value='';
+  }
+};
+
+// ── Overview module ───────────────────────────────────────────────
+const Overview={
+  chart:null,
+  render(){
+    const myCheckins=AppState.checkins;const now=new Date();
+    let cutoff,labels,groupFn;
+    const p=AppState.overviewPeriod;
+    if(p==='week'){cutoff=new Date(now);cutoff.setDate(now.getDate()-6);cutoff.setHours(0,0,0,0);groupFn=d=>d.toLocaleDateString('en-AU',{weekday:'short'});labels=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(now.getDate()-(6-i));return d.toLocaleDateString('en-AU',{weekday:'short'});});}
+    else if(p==='month'){cutoff=new Date(now);cutoff.setDate(now.getDate()-29);cutoff.setHours(0,0,0,0);groupFn=d=>'Wk '+(Math.floor((d-cutoff)/(7*86400000))+1);labels=['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5'].slice(0,Math.ceil(30/7));}
+    else{cutoff=new Date(now);cutoff.setMonth(now.getMonth()-11);cutoff.setDate(1);cutoff.setHours(0,0,0,0);groupFn=d=>d.toLocaleDateString('en-AU',{month:'short'});labels=Array.from({length:12},(_,i)=>{const d=new Date(now);d.setMonth(now.getMonth()-(11-i));return d.toLocaleDateString('en-AU',{month:'short'});});}
+    const drEl=$('overview-daterange');if(drEl){const f=d=>d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});drEl.textContent=f(cutoff)+' – '+f(now);}
+    const filtered=myCheckins.filter(c=>new Date(c.timestamp)>=cutoff);
+    const buckets={};filtered.forEach(c=>{const key=groupFn(new Date(c.timestamp));if(!buckets[key])buckets[key]={stress:[],mood:[]};buckets[key].stress.push(c.stress);buckets[key].mood.push(c.mood);});
+    const stressData=labels.map(l=>Util.avg(buckets[l]?.stress||[]));
+    const moodData=labels.map(l=>Util.avg(buckets[l]?.mood||[]));
+    const allStress=filtered.map(c=>c.stress),allMood=filtered.map(c=>c.mood);
+    const avgStress=Util.avg(allStress),avgMood=Util.avg(allMood);
+    const pName=p==='week'?'this week':p==='month'?'this month':'this year';
+    const moodLabel=avgMood?(MOODS.find(m=>m.val===Math.round(avgMood))||MOODS[2]).label:null;
+    const stressDesc=!avgStress?'':avgStress<=2?'low 🟢':avgStress<=3?'moderate 🟡':'high 🔴';
+    const sumEl=$('overview-summary');
+    if(filtered.length===0){sumEl.textContent='No check-ins recorded for this period yet.';}
+    else{sumEl.innerHTML=`<strong>${filtered.length} check-in${filtered.length!==1?'s':''} ${pName}.</strong> Average stress <strong>${avgStress}/5</strong> (${stressDesc}), average mood <strong>${moodLabel}</strong>.`;}
+    // Streak
+    let streak=0,checkDate=new Date(now);
+    const todayStr=now.toDateString();
+    const firstWinOpen=now.getHours()*60+now.getMinutes()>=WIN.morning.startH*60+WIN.morning.startM;
+    if(!firstWinOpen&&!myCheckins.some(c=>new Date(c.timestamp).toDateString()===todayStr))checkDate.setDate(checkDate.getDate()-1);
+    while(true){const ds=checkDate.toDateString();if(!myCheckins.some(c=>new Date(c.timestamp).toDateString()===ds))break;streak++;checkDate.setDate(checkDate.getDate()-1);}
+    const pillsEl=$('overview-pills');const pills=[];
+    if(streak>0)pills.push(`🔥 ${streak}-day streak`);
+    if(filtered.length>0){const best=filtered.reduce((a,b)=>(a.mood>b.mood||(a.mood===b.mood&&a.stress<b.stress))?a:b);const worst=filtered.reduce((a,b)=>(a.mood<b.mood||(a.mood===b.mood&&a.stress>b.stress))?a:b);pills.push('✨ Best: '+new Date(best.timestamp).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}));if(filtered.length>1)pills.push('💙 Tough: '+new Date(worst.timestamp).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}));}
+    pillsEl.innerHTML=pills.map(p=>`<span class="insight-pill">${p}</span>`).join('');
+    // Lifestyle correlations
+    const corrEl=$('overview-correlations');const lifeKeys=['sleep','energy','eating'];const lifeLabels={sleep:'😴 Sleep',energy:'⚡ Energy',eating:'🍎 Eating'};let corrHTML='';
+    lifeKeys.forEach(key=>{const groups={};filtered.forEach(c=>{if(c[key]){if(!groups[c[key]])groups[c[key]]=[];groups[c[key]].push(c.mood);}});const entries=Object.entries(groups).filter(([,v])=>v.length>=1);if(entries.length<2)return;const sorted=entries.sort((a,b)=>Util.avg(b[1])-Util.avg(a[1]));const best=sorted[0],worst=sorted[sorted.length-1];if(best[0]===worst[0])return;corrHTML+=`<div style="margin-bottom:10px;padding:10px 13px;background:var(--sage-xpale);border-radius:var(--radius-sm);border:1px solid var(--card-border);font-size:13px;line-height:1.6"><span style="font-weight:600">${lifeLabels[key]}:</span> You tend to feel better with <strong>${best[0]}</strong> ${key} vs <strong>${worst[0]}</strong>.</div>`;});
+    corrEl.innerHTML=corrHTML?'<div style="font-size:13px;font-weight:600;margin-bottom:8px">Lifestyle insights</div>'+corrHTML:'';
+    // Chart — Block 4: reuse instance
+    const wrapEl=$('overview-chart-wrap');const emptyEl=$('overview-chart-empty');const legendEl=$('overview-legend');
+    const hasData=stressData.some(v=>v!==null);
+    if(!hasData){wrapEl.style.display='none';emptyEl.style.display='block';legendEl.style.display='none';return;}
+    wrapEl.style.display='block';emptyEl.style.display='none';legendEl.style.display='flex';
+    const MOOD_COLORS=['#C44040','#C47A30','#C4A030','#7A9E3A','#3A8B5A'];
+    const MOOD_LABELS=['Struggling','Low','Okay','Good','Great'];
+    const MOOD_EMOJIS=['😞','😔','😐','🙂','😄'];
+    const barColors=labels.map((_,i)=>{const m=moodData[i];if(m===null)return 'var(--cream-warm)';return MOOD_COLORS[Math.min(4,Math.max(0,Math.round(m)-1))];});
+    const canvasEl=$('overview-chart');
+    if(this.chart){this.chart.data.labels=labels;this.chart.data.datasets[0].data=stressData;this.chart.data.datasets[0].backgroundColor=barColors;this.chart.update();}
+    else{this.chart=new Chart(canvasEl,{type:'bar',data:{labels,datasets:[{data:stressData,backgroundColor:barColors,borderRadius:6,borderSkipped:false}]},options:{scales:{y:{min:0,max:5,ticks:{stepSize:1},grid:{color:'rgba(91,138,111,.08)'}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>ctx[0].label,label:ctx=>{const s=ctx.raw;if(s===null)return 'No data';const mVal=moodData[ctx.dataIndex];const mIdx=mVal!==null?Math.min(4,Math.max(0,Math.round(mVal)-1)):null;const mStr=mIdx!==null?`${MOOD_EMOJIS[mIdx]} ${MOOD_LABELS[mIdx]}`:'No data';return[`Stress: ${s!==null?s.toFixed(1):'—'}/5`,`Mood: ${mStr}`];}}}},responsive:true,maintainAspectRatio:false}});}
+    const usedMoods=[...new Set(labels.map((_,i)=>moodData[i]!==null?Math.min(4,Math.max(0,Math.round(moodData[i])-1)):null).filter(v=>v!==null))].sort();
+    legendEl.innerHTML=usedMoods.map(idx=>`<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-soft)"><span style="width:10px;height:10px;border-radius:2px;background:${MOOD_COLORS[idx]};display:inline-block"></span>${MOOD_LABELS[idx]}</span>`).join('')+'<span style="font-size:11px;color:var(--ink-ghost);margin-left:4px">· Bar height = stress</span>';
+  }
+};
+
+// ── Manager module (Mgr) ──────────────────────────────────────────
+const _charts={trend:null,concern:null,mood:null};
+const Mgr={
+  renderStats(){
+    const checkins=this._filterByPeriod(AppState.checkins);
+    const concerns=this._filterByPeriod(AppState.concerns);
+    const incidents=this._filterByPeriod(AppState.incidents);
+    const avgS=checkins.length?(checkins.reduce((a,c)=>a+c.stress,0)/checkins.length).toFixed(1):'—';
+    const sColor=isNaN(avgS)?'var(--sage)':avgS>=4?'var(--danger)':avgS>=3?'var(--warn)':'var(--good)';
+    $('stat-cards').innerHTML=`<div class="stat-card"><div class="stat-val">${checkins.length}</div><div class="stat-label">💚 Check-ins</div></div><div class="stat-card"><div class="stat-val" style="color:${sColor}">${avgS}</div><div class="stat-label">😬 Avg Stress / 5</div></div><div class="stat-card"><div class="stat-val">${concerns.length}</div><div class="stat-label">🔔 Concerns</div></div><div class="stat-card"><div class="stat-val">${incidents.length}</div><div class="stat-label">⚠️ Incidents</div></div>`;
+  },
+  renderCharts(){
+    const checkins=this._filterByPeriod(AppState.checkins);
+    const concerns=this._filterByPeriod(AppState.concerns);
+    // Trend — Block 4: reuse chart instance
+    const trendWrap=$('trend-chart-wrap'),trendEmpty=$('trend-empty');
+    if(checkins.length===0){trendWrap.style.display='none';trendEmpty.style.display='block';}
+    else{
+      trendWrap.style.display='block';trendEmpty.style.display='none';
+      const last=checkins.slice(-10);const labels=last.map((_,i)=>'#'+(i+1));
+      if(_charts.trend){_charts.trend.data.labels=labels;_charts.trend.data.datasets[0].data=last.map(c=>c.stress);_charts.trend.data.datasets[1].data=last.map(c=>c.mood);_charts.trend.update();}
+      else{_charts.trend=new Chart($('trend-chart'),{type:'line',data:{labels,datasets:[{label:'Stress',data:last.map(c=>c.stress),borderColor:'#C44040',backgroundColor:'#C4404015',tension:.4,pointRadius:4,fill:true},{label:'Mood',data:last.map(c=>c.mood),borderColor:'#3A8B5A',backgroundColor:'#3A8B5A10',tension:.4,pointRadius:4,fill:true}]},options:{scales:{y:{min:1,max:5,ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.04)'}}},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},responsive:true,maintainAspectRatio:false}});}
+    }
+    // Concern bar
+    const cWrap=$('concern-chart-wrap'),cEmpty=$('concern-chart-empty');
+    const cats=['Workload','Safety','Management','Workplace Culture','Other'];
+    const counts=cats.map(c=>concerns.filter(x=>x.category===c).length);
+    if(counts.every(x=>x===0)){cWrap.style.display='none';cEmpty.style.display='block';}
+    else{
+      cWrap.style.display='block';cEmpty.style.display='none';
+      if(_charts.concern){_charts.concern.data.datasets[0].data=counts;_charts.concern.update();}
+      else{_charts.concern=new Chart($('concern-chart'),{type:'bar',data:{labels:cats.map(c=>c.replace('Workplace Culture','Culture')),datasets:[{data:counts,backgroundColor:'rgba(91,138,111,.65)',borderRadius:5}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.04)'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}});}
+    }
+    // Mood doughnut
+    const mWrap=$('mood-chart-wrap'),mEmpty=$('mood-chart-empty');
+    const mCounts=MOODS.map(m=>({label:m.label,count:checkins.filter(c=>c.mood===m.val).length,color:m.color})).filter(m=>m.count>0);
+    if(mCounts.length===0){mWrap.style.display='none';mEmpty.style.display='block';}
+    else{
+      mWrap.style.display='block';mEmpty.style.display='none';
+      if(_charts.mood){_charts.mood.data.labels=mCounts.map(m=>m.label);_charts.mood.data.datasets[0].data=mCounts.map(m=>m.count);_charts.mood.data.datasets[0].backgroundColor=mCounts.map(m=>m.color);_charts.mood.update();}
+      else{_charts.mood=new Chart($('mood-chart'),{type:'doughnut',data:{labels:mCounts.map(m=>m.label),datasets:[{data:mCounts.map(m=>m.count),backgroundColor:mCounts.map(m=>m.color),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},responsive:true,maintainAspectRatio:false,cutout:'60%'}});}
+    }
+  },
+  renderCheckinsList(){
+    const el=$('checkins-list');const note=$('checkins-page-note');const moreBtn=$('checkins-load-more');
+    if(!AppState.checkins.length){el.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--ink-soft)"><div style="font-size:36px;margin-bottom:8px">💚</div>No check-ins yet.</div>';if(note)note.textContent='';if(moreBtn)moreBtn.style.display='none';return;}
+    const all=[...AppState.checkins].reverse();
+    const total=all.length;const showing=Math.min(this._checkinsPage*this._pageSize,total);
+    const visible=all.slice(0,showing);
+    if(note)note.textContent=`Showing ${showing} of ${total} check-in${total!==1?'s':''}`;
+    if(moreBtn)moreBtn.style.display=showing<total?'block':'none';
+    el.innerHTML=visible.map(c=>{const m=MOODS.find(x=>x.val===c.mood)||MOODS[2];const sColor=c.stress>=4?'var(--danger)':c.stress===3?'var(--warn)':'var(--good)';const extras=[c.sleep&&`😴 ${c.sleep}`,c.energy&&`⚡ ${c.energy}`,c.eating&&`🍎 ${c.eating}`].filter(Boolean).join(' · ');return`<div class="mgr-list-item"><div style="display:flex;align-items:center;gap:11px"><span style="font-size:28px">${m.emoji}</span><div style="flex:1"><div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px"><span class="badge" style="background:${m.color}18;color:${m.color}">${m.label}</span><span class="badge" style="background:${sColor}18;color:${sColor}">Stress ${c.stress}/5</span>${c.session_window?`<span class="badge" style="background:var(--sage-pale);color:var(--sage)">${c.session_window.charAt(0).toUpperCase()+c.session_window.slice(1)}</span>`:''}</div><div style="font-size:12px;color:var(--ink-ghost)">${Util.fmtDate(c.timestamp)} · ${Util.fmtTime(c.timestamp)}${extras?' · '+extras:''}</div></div></div></div>`;}).join('');
+  },
+  loadMoreCheckins(){this._checkinsPage++;this.renderCheckinsList();},
+  renderConcernsList(){
+    const el=$('concerns-list');const note=$('concerns-page-note');const moreBtn=$('concerns-load-more');
+    if(!AppState.concerns.length){el.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--ink-soft)"><div style="font-size:36px;margin-bottom:8px">🔔</div>No concern reports yet.</div>';if(note)note.textContent='';if(moreBtn)moreBtn.style.display='none';return;}
+    const all=[...AppState.concerns].reverse();
+    const total=all.length;const showing=Math.min(this._concernsPage*this._pageSize,total);
+    const visible=all.slice(0,showing);
+    if(note)note.textContent=`Showing ${showing} of ${total} concern${total!==1?'s':''}`;
+    if(moreBtn)moreBtn.style.display=showing<total?'block':'none';
+    el.innerHTML=visible.map(c=>`<div class="mgr-list-item"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${c.description?'8px':'0'}"><span class="badge" style="background:var(--sage-pale);color:var(--sage)">${Util.sanitise(c.category)}</span><span style="font-size:12px;color:var(--ink-ghost)">${Util.fmtDate(c.timestamp)}</span></div>${c.description?`<p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink)">${Util.sanitise(c.description)}</p>`:''}</div>`).join('');
+  },
+  loadMoreConcerns(){this._concernsPage++;this.renderConcernsList();},
+  // ── Incident state ────────────────────────────────────────────
+  _incFilters:{status:'Open',sev:'all'},
+  _activeIncidentId: null,
+  _incNotes: {},
+  _period: 'week',
+  _checkinsPage: 1,
+  _concernsPage: 1,
+  _pageSize: 20,
+
+  setPeriod(p, el){
+    this._period=p;
+    document.querySelectorAll('[id^="mgr-period-"]').forEach(b=>b.classList.remove('active'));
+    if(el)el.classList.add('active');
+    this.renderStats();this.renderCharts();
+    const lbl=$('mgr-period-label');
+    if(lbl){
+      const now=new Date();
+      if(p==='all'){lbl.textContent='Showing all data';}
+      else{
+        const cutoff=this._getPeriodCutoff();
+        const f=d=>d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+        lbl.textContent='Showing: '+f(cutoff)+' – '+f(now);
+      }
+    }
+  },
+
+  _getPeriodCutoff(){
+    const now=new Date();
+    if(this._period==='week'){const d=new Date(now);d.setDate(now.getDate()-6);d.setHours(0,0,0,0);return d;}
+    if(this._period==='month'){const d=new Date(now);d.setDate(now.getDate()-29);d.setHours(0,0,0,0);return d;}
+    if(this._period==='year'){const d=new Date(now);d.setMonth(now.getMonth()-11);d.setDate(1);d.setHours(0,0,0,0);return d;}
+    return null; // all time
+  },
+
+  _filterByPeriod(arr){
+    const cutoff=this._getPeriodCutoff();
+    if(!cutoff)return arr;
+    return arr.filter(x=>new Date(x.timestamp)>=cutoff);
+  },
+
+  setFilter(type,val,el){
+    if(type==='sev'){
+      if(this._incFilters.sev===val){
+        this._incFilters.sev='all';
+        document.querySelectorAll('[data-ftype="sev"]').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('[data-ftype="sev"][data-fval="all"]').forEach(b=>b.classList.add('active'));
+      }else{
+        this._incFilters.sev=val;
+        document.querySelectorAll('[data-ftype="sev"]').forEach(b=>b.classList.remove('active'));
+        el.classList.add('active');
+        if(this._incFilters.sev==='all')document.querySelectorAll('[data-ftype="sev"][data-fval="all"]').forEach(b=>b.classList.add('active'));
+      }
+    }else{
+      this._incFilters[type]=val;
+      document.querySelectorAll(`[data-ftype="${type}"]`).forEach(b=>b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    this.renderIncidentsList();
+  },
+
+  renderIncidentStats(){
+    const el=$('inc-stat-strip');if(!el)return;
+    const inc=AppState.incidents;
+    const now=new Date();const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const openCount=inc.filter(i=>(i.status||'Open')==='Open').length;
+    const critHighMonth=inc.filter(i=>new Date(i.timestamp)>=monthStart&&(i.severity==='Critical'||i.severity==='High')).length;
+    const resolvedMonth=inc.filter(i=>new Date(i.timestamp)>=monthStart&&i.status==='Resolved').length;
+    const sevColor=openCount>0?'var(--danger)':'var(--good)';
+    el.innerHTML=`
+      <div class="inc-stat-pill"><div class="inc-stat-num" style="color:${sevColor}">${openCount}</div><div class="inc-stat-lbl">Open Incidents</div></div>
+      <div class="inc-stat-pill"><div class="inc-stat-num" style="color:var(--warn)">${critHighMonth}</div><div class="inc-stat-lbl">Critical/High This Month</div></div>
+      <div class="inc-stat-pill"><div class="inc-stat-num" style="color:var(--good)">${resolvedMonth}</div><div class="inc-stat-lbl">Resolved This Month</div></div>
+    `;
+  },
+
+  // ── INCIDENT LIST — clickable summary cards ─────────────────
+  renderIncidentsList(){
+    this.renderIncidentStats();
+    const el=$('incidents-list');
+    if(!AppState.incidents.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--ink-soft)"><div style="font-size:36px;margin-bottom:8px">⚠️</div>No incident reports yet.</div>';
+      return;
+    }
+    const sevColors={Low:'var(--good)',Medium:'var(--warn)',High:'var(--danger)',Critical:'#7A1A1A'};
+    const sevOrder={Critical:0,High:1,Medium:2,Low:3};
+    const sortVal=$('inc-sort')?.value||'newest';
+    const{status:fStatus,sev:fSev}=this._incFilters;
+    let list=[...AppState.incidents];
+    if(fStatus!=='all')list=list.filter(i=>(i.status||'Open')===fStatus);
+    if(fSev!=='all')list=list.filter(i=>i.severity===fSev);
+    if(sortVal==='newest')list.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    else if(sortVal==='oldest')list.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+    else if(sortVal==='severity')list.sort((a,b)=>(sevOrder[a.severity]??9)-(sevOrder[b.severity]??9));
+    if(!list.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--ink-soft)">No incidents match the current filters.</div>';
+      return;
+    }
+    const sevBorder={Critical:'inc-card-critical',High:'inc-card-high',Medium:'inc-card-medium',Low:'inc-card-low'};
+    el.innerHTML=list.map(i=>{
+      const st=i.status||'Open';
+      const stCls=st==='Open'?'open':st==='Reviewed'?'reviewed':'resolved';
+      const borderCls=sevBorder[i.severity]||'';
+      const noteCount=(this._incNotes[i.id]||[]).length;
+      const noteLabel=noteCount>0?`<span style="font-size:11px;color:var(--sage);font-weight:600;background:var(--sage-pale);padding:2px 9px;border-radius:50px">📝 ${noteCount} note${noteCount!==1?'s':''}</span>`:'';
+      const regDot=(i.category==='Child Safety'||i.severity==='Critical')?'<span style="width:8px;height:8px;background:var(--danger);border-radius:50%;display:inline-block;flex-shrink:0" title="Regulatory notification may be required"></span>':'';
+      return`<div class="mgr-list-item ${borderCls} inc-row-card" onclick="Mgr.openDetail('${i.id}')">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:7px">
+          ${regDot}
+          <span class="badge" style="background:${sevColors[i.severity]||'#888'}18;color:${sevColors[i.severity]||'#888'}">${Util.sanitise(i.severity||'')}</span>
+          <span class="badge" style="background:var(--sage-pale);color:var(--sage)">${Util.sanitise(i.category||'')}</span>
+          ${i.involved?`<span class="badge" style="background:var(--sky-pale);color:var(--sky)">${Util.sanitise(i.involved)}</span>`:''}
+          <span class="inc-status ${stCls}" style="margin-left:auto">${st}</span>
+        </div>
+        <div style="font-size:12px;color:var(--ink-ghost);margin-bottom:5px">
+          📅 ${Util.sanitise(i.date||'')} ${i.incident_time?'· '+i.incident_time:''} ${i.location?'· '+Util.sanitise(i.location):''}
+        </div>
+        <p style="margin:0;font-size:13px;color:var(--ink);line-height:1.5;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+          ${Util.sanitise(i.description)}
+        </p>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--ink-ghost)">👤 ${Util.sanitise(i.reporter_email||'Unknown')} · Ref: ${i.id?i.id.slice(-6).toUpperCase():''}</span>
+          ${noteLabel}
+          <span class="inc-open-hint">View details →</span>
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  // ── INCIDENT DETAIL PANEL ───────────────────────────────────
+  async openDetail(incidentId){
+    this._activeIncidentId=incidentId;
+    const i=AppState.incidents.find(x=>x.id===incidentId);
+    if(!i)return;
+    const overlay=$('inc-detail-overlay');
+    const badgesEl=$('inc-detail-badges');
+    const metaEl=$('inc-detail-meta');
+    const bodyEl=$('inc-detail-body');
+    const noteInput=$('inc-detail-note-input');
+    if(noteInput)noteInput.value='';
+    // Badges
+    const sevColors={Low:'var(--good)',Medium:'var(--warn)',High:'var(--danger)',Critical:'#7A1A1A'};
+    const st=i.status||'Open';
+    const stCls=st==='Open'?'open':st==='Reviewed'?'reviewed':'resolved';
+    badgesEl.innerHTML=`
+      <span class="badge" style="background:${sevColors[i.severity]||'#888'}18;color:${sevColors[i.severity]||'#888'};font-size:13px;padding:4px 12px">${Util.sanitise(i.severity||'')}</span>
+      <span class="badge" style="background:var(--sage-pale);color:var(--sage);font-size:13px;padding:4px 12px">${Util.sanitise(i.category||'')}</span>
+      ${i.involved?`<span class="badge" style="background:var(--sky-pale);color:var(--sky);font-size:13px;padding:4px 12px">${Util.sanitise(i.involved)}</span>`:''}
+      <select class="status-select" onchange="Mgr.updateStatus('${i.id}',this.value)" style="margin-left:auto">
+        <option value="Open"     ${st==='Open'?'selected':''}>Open</option>
+        <option value="Reviewed" ${st==='Reviewed'?'selected':''}>Reviewed</option>
+        <option value="Resolved" ${st==='Resolved'?'selected':''}>Resolved</option>
+      </select>`;
+    // Meta line
+    metaEl.innerHTML=`📅 ${Util.sanitise(i.date||'')} ${i.incident_time?'· '+i.incident_time:''} ${i.location?'· '+Util.sanitise(i.location):''} · Ref: <strong>${i.id?i.id.slice(-6).toUpperCase():''}</strong>`;
+    // Body
+    const yn=[
+      i.first_aid==='yes'?'🏥 First aid provided':null,
+      i.emergency==='yes'?'🚑 Emergency services called':null,
+      i.parent_notified==='yes'?'📞 Parent/guardian notified':null,
+      i.witnesses==='yes'?`👀 Witnesses: ${Util.sanitise(i.witness_names||'names not provided')}`:null
+    ].filter(Boolean);
+    const regBanner=(i.category==='Child Safety'||i.severity==='Critical')?`
+      <div class="reg-banner" style="margin-bottom:14px">
+        <span style="font-size:18px;flex-shrink:0">⚠️</span>
+        <div><strong>Regulatory notification may be required within 24 hours</strong> under the National Law. Ensure this has been actioned before marking as Reviewed.</div>
+      </div>`:'';
+    const reviewedStr=i.reviewed_at?`✔ Reviewed ${Util.fmtDate(i.reviewed_at)}`:'';
+    const resolvedStr=i.resolved_at?`✅ Resolved ${Util.fmtDate(i.resolved_at)}`:'';
+    const auditRow=(reviewedStr||resolvedStr)?`<div class="audit-row" style="margin-bottom:14px">${reviewedStr?'<span>'+reviewedStr+'</span>':''}${resolvedStr?'<span>'+resolvedStr+'</span>':''}</div>`:'';
+    bodyEl.innerHTML=`
+      ${regBanner}
+      ${auditRow}
+      <div class="detail-section">
+        <div class="detail-section-title">Description</div>
+        <p style="font-size:14px;line-height:1.65;color:var(--ink);margin:0">${Util.sanitise(i.description)}</p>
+      </div>
+      ${yn.length?`<div class="detail-section"><div class="detail-section-title">Immediate Response</div><div style="display:flex;flex-direction:column;gap:6px">${yn.map(y=>`<div style="font-size:13px;color:var(--ink-mid)">${y}</div>`).join('')}</div></div>`:''}
+      <div class="detail-section">
+        <div class="detail-section-title">Reporter</div>
+        <div style="font-size:13px;color:var(--ink-mid)">👤 ${Util.sanitise(i.reporter_email||'Unknown')} · Submitted ${Util.fmtDate(i.timestamp)}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Notes Thread</div>
+        <div id="inc-notes-thread" class="note-thread">
+          <div class="note-empty">Loading notes…</div>
+        </div>
+      </div>`;
+    // Show overlay
+    overlay.style.display='flex';
+    document.body.style.overflow='hidden';
+    // Load notes from Supabase
+    await this.loadNotes(incidentId);
+  },
+
+  closeDetail(event){
+    if(event&&event.target!=$('inc-detail-overlay'))return;
+    $('inc-detail-overlay').style.display='none';
+    document.body.style.overflow='';
+    this._activeIncidentId=null;
+  },
+
+  async loadNotes(incidentId){
+    const threadEl=$('inc-notes-thread');
+    try{
+      const{data,error}=await db.from('incident_notes')
+        .select('*')
+        .eq('incident_id',incidentId)
+        .order('created_at',{ascending:true});
+      if(error)throw error;
+      this._incNotes[incidentId]=data||[];
+      this.renderNoteThread(data||[]);
+    }catch(e){
+      if(threadEl)threadEl.innerHTML='<div class="note-empty">Could not load notes.</div>';
+    }
+  },
+
+  renderNoteThread(notes){
+    const threadEl=$('inc-notes-thread');
+    if(!threadEl)return;
+    if(!notes.length){
+      threadEl.innerHTML='<div class="note-empty">No notes yet. Add the first note below.</div>';
+      return;
+    }
+    threadEl.innerHTML=notes.map(n=>`
+      <div class="note-item">
+        <div class="note-meta">
+          <span class="note-author">📝 ${Util.sanitise(n.author_email||'Manager')}</span>
+          <span>${new Date(n.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        <div class="note-text">${Util.sanitise(n.note)}</div>
+      </div>`).join('');
+    // Refresh note count badge on the list card
+    this.renderIncidentsList();
+  },
+
+  async submitDetailNote(){
+    const incidentId=this._activeIncidentId;
+    if(!incidentId)return;
+    const ta=$('inc-detail-note-input');
+    const noteText=(ta?.value||'').trim();
+    if(!noteText){Toast.error('Please enter a note before posting.');return;}
+    if(noteText.length>2000){Toast.error('Note is too long (max 2000 characters).');return;}
+    const btn=document.querySelector('[onclick="Mgr.submitDetailNote()"]');
+    if(btn){btn.disabled=true;btn.textContent='Saving…';}
+    const entry={
+      id:       Util.genId(),
+      incident_id: incidentId,
+      note:     Util.sanitise(noteText),
+      author_email: AppState.user?.email||'Manager',
+      created_at: new Date().toISOString()
+    };
+    try{
+      const{error}=await db.from('incident_notes').insert(entry);
+      if(error)throw error;
+      if(!this._incNotes[incidentId])this._incNotes[incidentId]=[];
+      this._incNotes[incidentId].push(entry);
+      this.renderNoteThread(this._incNotes[incidentId]);
+      ta.value='';
+      Toast.success('Note posted');
+      // Auto-update status to Reviewed if still Open — notify manager explicitly
+      const inc=AppState.incidents.find(x=>x.id===incidentId);
+      if(inc&&(inc.status||'Open')==='Open'){
+        await this.updateStatus(incidentId,'Reviewed');
+        Toast.success('Status auto-updated to Reviewed');
+      }
+    }catch(e){
+      Toast.error('Could not save note — check your connection');
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Post note';}
+    }
+  },
+
+  // ── Keep old saveNotes stub so existing data isn't broken ───
+  async saveNotes(){},
+
+  async updateStatus(id,newStatus){
+    const idx=AppState.incidents.findIndex(i=>i.id===id);
+    const now=new Date().toISOString();
+    const update={status:newStatus};
+    if(newStatus==='Reviewed')update.reviewed_at=now;
+    if(newStatus==='Resolved')update.resolved_at=now;
+    if(idx>=0){
+      AppState.incidents[idx].status=newStatus;
+      if(newStatus==='Reviewed')AppState.incidents[idx].reviewed_at=now;
+      if(newStatus==='Resolved')AppState.incidents[idx].resolved_at=now;
+    }
+    try{
+      const{error}=await db.from('incidents').update(update).eq('id',id);
+      if(error)throw error;
+      Toast.success('Status updated to '+newStatus);
+      this.renderIncidentsList();
+      // Refresh badges in open detail panel if still open
+      if(this._activeIncidentId===id){
+        const i=AppState.incidents.find(x=>x.id===id);
+        if(i){
+          const st=i.status||'Open';
+          const sel=$('inc-detail-badges')?.querySelector('select');
+          if(sel)sel.value=st;
+          const reviewedStr=i.reviewed_at?`✔ Reviewed ${Util.fmtDate(i.reviewed_at)}`:'';
+          const resolvedStr=i.resolved_at?`✅ Resolved ${Util.fmtDate(i.resolved_at)}`:'';
+          const auditEl=$('inc-detail-body')?.querySelector('.audit-row');
+          if(auditEl&&(reviewedStr||resolvedStr)){
+            auditEl.innerHTML=`${reviewedStr?'<span>'+reviewedStr+'</span>':''}${resolvedStr?'<span>'+resolvedStr+'</span>':''}`;
+          }
+        }
+      }
+    }catch(e){Toast.error('Could not update status');}
+  },
+
+  exportIncidents(){
+    const inc=AppState.incidents;
+    if(!inc.length){Toast.error('No incidents to export');return;}
+    const headers=['Ref','Date','Time','Location','Category','Severity','Involved','Description','First Aid','Emergency','Parent Notified','Witnesses','Witness Names','Reporter','Status','Reviewed At','Resolved At','Submitted At'];
+    const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+    const rows=inc.map(i=>[
+      i.id?i.id.slice(-6).toUpperCase():'',i.date||'',i.incident_time||'',i.location||'',
+      i.category||'',i.severity||'',i.involved||'',i.description||'',
+      i.first_aid||'',i.emergency||'',i.parent_notified||'',i.witnesses||'',i.witness_names||'',
+      i.reporter_email||'',i.status||'Open',
+      i.reviewed_at?Util.fmtDate(i.reviewed_at):'',
+      i.resolved_at?Util.fmtDate(i.resolved_at):'',
+      Util.fmtDate(i.timestamp)
+    ].map(esc).join(','));
+    const csv=[headers.map(esc).join(','),...rows].join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download='wellspace_incidents_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();URL.revokeObjectURL(url);
+    Toast.success('Incidents exported as CSV');
+  },
+
+  async refresh(){
+    const btn=$('refresh-btn');if(btn){btn.textContent='Loading…';btn.disabled=true;}
+    try{
+      const[ch,co,inc]=await Promise.all([
+        db.from('checkins').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1),
+        db.from('concerns').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1),
+        db.from('incidents').select('*').order('timestamp',{ascending:true}).range(0,PAGE_SIZE-1)
+      ]);
+      AppState.checkins=ch.data||[];AppState.concerns=co.data||[];AppState.incidents=inc.data||[];
+      AppState.lastDataFetch=Date.now();
+    }catch(e){Toast.error('Refresh failed — check your connection');}
+    this._checkinsPage=1;this._concernsPage=1;
+    this.renderStats();this.renderCharts();this.renderCheckinsList();this.renderConcernsList();this.renderIncidentsList();
+    // Reapply current period label after refresh
+    Mgr.setPeriod(this._period, $('mgr-period-'+this._period));
+    const el=$('mgr-refreshed');if(el)el.textContent='Refreshed '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    if(btn){btn.textContent='↻ Refresh';btn.disabled=false;}
+  },
+
+  switchTab(tab){
+    ['overview','checkins','concerns','incidents'].forEach(t=>{
+      $('mgr-tab-'+t).classList.toggle('active',t===tab);
+      $('mgr-nav-'+t).classList.toggle('active',t===tab);
+    });
+    if(tab==='overview'){this.renderStats();this.renderCharts();}
+    if(tab==='incidents'){
+      this._incFilters={status:'all',sev:'all'};
+      document.querySelectorAll('[data-ftype]').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('[data-fval="all"]').forEach(b=>b.classList.add('active'));
+      this.renderIncidentsList();
+    }
+  }
+};
+
+// ── Dark mode toggle ──────────────────────────────────────────────
+function toggleDarkMode(){
+  const isDark=document.documentElement.classList.toggle('dark');
+  try{localStorage.setItem('ws-theme',isDark?'dark':'light');}catch(e){}
+  document.querySelectorAll('.dark-toggle,[id$="dark-btn"]').forEach(b=>b.textContent=isDark?'☀️':'🌙');
+}
+(function(){try{if(localStorage.getItem('ws-theme')==='dark'){document.documentElement.classList.add('dark');document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.dark-toggle,[id$="dark-btn"]').forEach(b=>b.textContent='☀️');});}}catch(e){}})();
+
+// ── PWA setup (Block 5) ───────────────────────────────────────────
+(function setupPWA(){
+  // Inject manifest
+  const manifest={name:'WellSpace',short_name:'WellSpace',start_url:'.',display:'standalone',background_color:'#F4F8F5',theme_color:'#5B8A6F',icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌿</text></svg>',sizes:'any',type:'image/svg+xml'}]};
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  const link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(blob);document.head.appendChild(link);
+  // Register service worker via blob
+  if('serviceWorker' in navigator){
+    const swCode=`
+const CACHE='wellspace-v3';
+const ASSETS=['https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}));self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{if(e.request.url.includes('supabase.co'))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});
+    `;
+    const swBlob=new Blob([swCode],{type:'application/javascript'});
+    const swURL=URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL).catch(()=>{});
+  }
+})();
+
+// ── Init ──────────────────────────────────────────────────────────
+OfflineQueue.flush();
+
+// UX #1: Session restore on page refresh
+(async function restoreSession(){
+  try{
+    const{data:{session}}=await db.auth.getSession();
+    if(!session)return;
+    const{data:prof}=await db.from('profiles').select('role').eq('id',session.user.id).single();
+    if(!prof)return;
+    AppState.user=session.user;AppState.profile=prof;
+    if(prof.role==='educator'){goEducator();}
+    else if(prof.role==='manager'){goManager();}
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
