@@ -514,23 +514,36 @@ html.dark .inc-details-section>summary{background:var(--cream-warm)}
   <div class="edu-content" id="edu-scroll-container">
     <!-- HOME -->
     <div id="tab-home" class="tab-content active">
+
+      <!-- Window notification banner — IDs/JS unchanged -->
       <div id="win-notif" class="win-notif">
         <span style="font-size:18px;flex-shrink:0">⏰</span>
         <span id="win-notif-msg" class="wn-msg" onclick="UI.switchTab('checkin')"></span>
         <button class="wn-close" onclick="UI.dismissWinNotif()">✕</button>
       </div>
-      <div class="animate-in" style="margin-bottom:20px">
-        <div id="greeting-date" style="font-size:13px;color:var(--ink-soft)"></div>
-        <h2 id="greeting-text" style="font-size:24px;color:var(--ink);margin:4px 0 6px"></h2>
-        <p style="font-size:13px;color:var(--ink-soft)">Your voice matters here — reports are always anonymous.</p>
+
+      <!-- ── Greeting block — improved typography hierarchy ── -->
+      <div class="animate-in" style="margin-bottom:22px">
+        <div id="greeting-date" style="font-size:12px;font-weight:600;color:var(--ink-ghost);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px"></div>
+        <h2 id="greeting-text" style="font-size:26px;color:var(--ink);margin:0 0 6px;font-family:'Fraunces',serif;font-weight:400;line-height:1.2"></h2>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sage);opacity:.8"></span>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0">Your voice matters here — reports are always anonymous.</p>
+        </div>
       </div>
+
+      <!-- Last check-in card + window strip — IDs unchanged, JS hooks preserved -->
       <div id="last-checkin-card" class="last-checkin-card card animate-in-1"></div>
       <div id="window-strip" class="window-strip strip-wait" style="display:none"></div>
+
+      <!-- Skeleton loader — unchanged -->
       <div id="data-loader" style="display:none;padding:20px 0">
         <div class="skel-card skeleton"></div>
         <div class="skel-line skeleton" style="width:60%"></div>
         <div class="skel-line skeleton" style="width:40%"></div>
       </div>
+
+      <!-- Overview panel — all IDs + JS hooks unchanged -->
       <div id="overview-panel" class="overview-panel">
         <div class="card" style="margin-bottom:14px;border-color:var(--sage-light)">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -551,28 +564,144 @@ html.dark .inc-details-section>summary{background:var(--cream-warm)}
           <div id="overview-correlations" style="margin-top:14px"></div>
         </div>
       </div>
-      <h3 style="font-size:14px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Quick Actions</h3>
-      <div class="action-grid">
-        <div class="action-card checkin-card animate-in-2" onclick="UI.switchTab('checkin')">
-          <div class="action-icon sage">💚</div>
-          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Wellbeing Check-in</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Morning 7:00–9:30 AM · Afternoon 2:00–4:00 PM</div></div>
-          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
-        </div>
-        <div class="action-card concern-card animate-in-2" onclick="UI.switchTab('concern')">
-          <div class="action-icon sky">🔔</div>
-          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Report a Concern</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Anonymous workplace report</div></div>
-          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
-        </div>
-        <div class="action-card incident-card animate-in-3" onclick="UI.switchTab('incident')">
-          <div class="action-icon warm">⚠️</div>
-          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Report an Incident</div><div style="font-size:12px;color:var(--ink-soft);margin-top:1px">Near-miss, injury, or safety issue</div></div>
-          <span style="margin-left:auto;color:var(--ink-ghost)">›</span>
-        </div>
+
+      <!-- ── Quick Actions — improved cards with coloured chevrons ── -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px">
+        <div style="width:3px;height:16px;border-radius:2px;background:var(--sage);opacity:.6"></div>
+        <h3 style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin:0">Quick Actions</h3>
       </div>
-      <div class="info-banner animate-in-3">🔒 <span><strong>Privacy protected.</strong> Management only sees aggregated trends — never individual responses.</span></div>
-      <div id="concern-session-note" style="display:none;margin-top:8px;padding:10px 14px;background:var(--sky-pale);border:1px solid var(--sky-light);border-radius:var(--radius-sm);font-size:12px;color:var(--sky);display:none;align-items:center;gap:8px">
+      <div class="action-grid">
+
+        <div class="action-card checkin-card animate-in-2" onclick="UI.switchTab('checkin')" style="border-left:3px solid var(--sage)">
+          <div class="action-icon sage">💚</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Wellbeing Check-in</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px">Morning 7:00–9:30 AM · Afternoon 2:00–4:00 PM</div>
+          </div>
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--sage);font-size:15px;font-weight:700">›</span>
+        </div>
+
+        <div class="action-card concern-card animate-in-2" onclick="UI.switchTab('concern')" style="border-left:3px solid var(--sky-mid)">
+          <div class="action-icon sky">🔔</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Report a Concern</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px">Anonymous workplace report</div>
+          </div>
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--sky-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--sky);font-size:15px;font-weight:700">›</span>
+        </div>
+
+        <div class="action-card incident-card animate-in-3" onclick="UI.switchTab('incident')" style="border-left:3px solid var(--warm)">
+          <div class="action-icon warm">⚠️</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Report an Incident</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px">Near-miss, injury, or safety issue</div>
+          </div>
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--warm-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--warm);font-size:15px;font-weight:700">›</span>
+        </div>
+
+      </div>
+
+      <!-- Privacy banner — slightly richer style -->
+      <div class="info-banner animate-in-3" style="margin-top:14px;border:1px solid var(--sage-light);background:var(--sage-xpale);border-radius:var(--radius);gap:10px">
+        <span style="font-size:16px;flex-shrink:0">🔒</span>
+        <span style="font-size:12px;color:var(--ink-soft)"><strong style="color:var(--ink-mid)">Privacy protected.</strong> Management only sees aggregated trends — never individual responses.</span>
+      </div>
+
+      <!-- Session note — IDs/JS unchanged -->
+      <div id="concern-session-note" style="display:none;margin-top:8px;padding:10px 14px;background:var(--sky-pale);border:1px solid var(--sky-light);border-radius:var(--radius-sm);font-size:12px;color:var(--sky);align-items:center;gap:8px">
         <span>✅</span><span id="concern-session-text"></span>
       </div>
+
+      <!-- ══════════════════════════════════════════════
+           NEW: Educator Resources Section
+           Static links — no Supabase needed.
+           Replace href="#" with real URLs when ready.
+      ══════════════════════════════════════════════ -->
+      <div style="margin-top:28px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px">
+          <div style="width:3px;height:16px;border-radius:2px;background:var(--sky-mid);opacity:.6"></div>
+          <h3 style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin:0">Educator Resources</h3>
+        </div>
+
+        <!-- Frameworks & Regulations -->
+        <div style="font-size:11px;font-weight:700;color:var(--ink-ghost);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;margin-top:4px">Frameworks &amp; Regulations</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+
+          <a href="https://www.acecqa.gov.au/nqf/national-law-regulations" target="_blank" rel="noopener" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card-bg);border:1.5px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .2s" onmouseover="this.style.borderColor='var(--sky-mid)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.transform='none'">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--sky-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📋</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">National Quality Framework</div>
+                <div style="font-size:11px;color:var(--ink-soft);margin-top:1px">ACECQA — NQF law &amp; regulations</div>
+              </div>
+              <span style="color:var(--sky-mid);font-size:13px;flex-shrink:0">↗</span>
+            </div>
+          </a>
+
+          <a href="https://www.acecqa.gov.au/sites/default/files/2023-01/EYLF-2022-V2.0.pdf" target="_blank" rel="noopener" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card-bg);border:1.5px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .2s" onmouseover="this.style.borderColor='var(--sky-mid)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.transform='none'">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📄</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">EYLF 2.0 — PDF Download</div>
+                <div style="font-size:11px;color:var(--ink-soft);margin-top:1px">Early Years Learning Framework (2022)</div>
+              </div>
+              <span style="color:var(--sage);font-size:11px;font-weight:700;background:var(--sage-pale);padding:2px 8px;border-radius:50px;flex-shrink:0">PDF</span>
+            </div>
+          </a>
+
+          <a href="https://www.safeworkaustralia.gov.au/early-childhood-education-and-care" target="_blank" rel="noopener" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card-bg);border:1.5px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .2s" onmouseover="this.style.borderColor='var(--sky-mid)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.transform='none'">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--warm-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">⚠️</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Safe Work Australia — ECEC</div>
+                <div style="font-size:11px;color:var(--ink-soft);margin-top:1px">WHS guidance for early childhood</div>
+              </div>
+              <span style="color:var(--sky-mid);font-size:13px;flex-shrink:0">↗</span>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- Wellbeing Support -->
+        <div style="font-size:11px;font-weight:700;color:var(--ink-ghost);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Wellbeing &amp; Support</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+
+          <a href="https://www.beyondblue.org.au/mental-health/work" target="_blank" rel="noopener" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card-bg);border:1.5px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .2s" onmouseover="this.style.borderColor='var(--sky-mid)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.transform='none'">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--sky-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💙</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Beyond Blue — Workplace Wellbeing</div>
+                <div style="font-size:11px;color:var(--ink-soft);margin-top:1px">Mental health resources for educators</div>
+              </div>
+              <span style="color:var(--sky-mid);font-size:13px;flex-shrink:0">↗</span>
+            </div>
+          </a>
+
+          <a href="https://www.headtohealth.gov.au" target="_blank" rel="noopener" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card-bg);border:1.5px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .2s" onmouseover="this.style.borderColor='var(--sky-mid)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.transform='none'">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌿</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--ink)">Head to Health</div>
+                <div style="font-size:11px;color:var(--ink-soft);margin-top:1px">Australian Government mental health portal</div>
+              </div>
+              <span style="color:var(--sky-mid);font-size:13px;flex-shrink:0">↗</span>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- EAP / Crisis — highlighted -->
+        <div style="padding:14px 16px;background:linear-gradient(135deg,var(--sage-xpale),var(--sky-pale));border:1.5px solid var(--sage-light);border-radius:var(--radius);margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-mid);margin-bottom:6px">🆘 Need to talk to someone?</div>
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.7">
+            <strong>EAP:</strong> Contact your centre director for your Employee Assistance Program number.<br>
+            <strong>Lifeline:</strong> 13 11 14 (24/7) &nbsp;·&nbsp; <strong>Beyond Blue:</strong> 1300 22 4636
+          </div>
+        </div>
+
+      </div>
+      <!-- ── End Resources Section ── -->
+
     </div>
     <!-- CHECK-IN -->
     <div id="tab-checkin" class="tab-content">
