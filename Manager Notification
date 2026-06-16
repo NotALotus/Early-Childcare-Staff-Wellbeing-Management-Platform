@@ -1,0 +1,13 @@
+// ── Manager Notification Helper ─────────────────────────────
+async function createNotification(type, message, link = null) {
+  try {
+    await db.from('notifications').insert({
+      type,
+      message,
+      link,
+      is_read: false
+    });
+  } catch (e) {
+    console.warn('Notification insert failed', e);
+  }
+}
